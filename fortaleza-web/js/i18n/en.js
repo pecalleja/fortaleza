@@ -124,5 +124,6 @@ export default {
     introTitle: 'THE FORTRESS',
     introSubtitle: 'In the Bowels of the Beast',
     introAuthor: 'by Miguel Cepero - Merchise Group',
+    introAdaptation: 'Web adaptation by Pedro Calleja with Claude Code AI',
   }
 };

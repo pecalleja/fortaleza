@@ -10,6 +10,7 @@ const introScreen = document.getElementById('intro-screen');
 const introTitle = document.getElementById('intro-title');
 const introSubtitle = document.getElementById('intro-subtitle');
 const introAuthor = document.getElementById('intro-author');
+const introAdaptation = document.getElementById('intro-adaptation');
 const introStory = document.getElementById('intro-story');
 const startBtn = document.getElementById('start-btn');
 
@@ -29,16 +30,16 @@ const restartBtn = document.getElementById('restart-btn');
 
 // Intro story text
 const storyEs = [
-  'Usted es un hombre comun, sumergido en una vida rutinaria y mediocre.',
-  'Dia tras dia espera que algo interesante aparezca en su camino.',
-  'Una manana, luego de haber leido el periodico, encuentra una carta junto a la puerta.',
+  'Usted es un hombre común, sumergido en una vida rutinaria y mediocre.',
+  'Día tras día espera que algo interesante aparezca en su camino.',
+  'Una mañana, luego de haber leído el periódico, encuentra una carta junto a la puerta.',
   '',
-  '"Estimado senor:',
-  'Tengo el alto honor de comunicarle que usted ha sido designado para cumplir una de las misiones mas importantes de la historia del hombre: Eliminar a la Bestia.',
+  '"Estimado señor:',
+  'Tengo el alto honor de comunicarle que usted ha sido designado para cumplir una de las misiones más importantes de la historia del hombre: Eliminar a la Bestia.',
   '',
-  'La Bestia es una de las criaturas mas temidas y misteriosas del universo. Segun varios informes, habita un lugar llamado la Fortaleza, aunque hay quienes dicen que la Bestia y la Fortaleza son una misma cosa.',
+  'La Bestia es una de las criaturas más temidas y misteriosas del universo. Según varios informes, habita un lugar llamado la Fortaleza, aunque hay quienes dicen que la Bestia y la Fortaleza son una misma cosa.',
   '',
-  'Su mision es: adentrarse en la Fortaleza y matar a la Bestia. Nada mas.',
+  'Su misión es: adentrarse en la Fortaleza y matar a la Bestia. Nada más.',
   '',
   '                                    General X',
   '                         Jefe de la Oficina de Casualidades"',
@@ -72,6 +73,7 @@ function updateIntro() {
   introTitle.textContent = i18n.t('introTitle');
   introSubtitle.textContent = i18n.t('introSubtitle');
   introAuthor.textContent = i18n.t('introAuthor');
+  introAdaptation.textContent = i18n.t('introAdaptation');
   startBtn.textContent = lang === 'en' ? 'BEGIN' : 'COMENZAR';
 
   const story = lang === 'en' ? storyEn : storyEs;
@@ -207,7 +209,7 @@ function updateLocation() {
   const room = engine.player.currentRoom;
 
   document.getElementById('loc-title').textContent =
-    lang === 'en' ? 'LOCATION' : 'UBICACION';
+    lang === 'en' ? 'LOCATION' : 'UBICACIÓN';
 
   locationName.textContent = room.name(lang);
 
@@ -357,7 +359,7 @@ function setupEventListeners() {
   });
 
   restartBtn.addEventListener('click', () => {
-    if (confirm(i18n.getLang() === 'en' ? 'Start a new game?' : 'Comenzar un nuevo juego?')) {
+    if (confirm(i18n.getLang() === 'en' ? 'Start a new game?' : '¿Comenzar un nuevo juego?')) {
       restartGame();
     }
   });

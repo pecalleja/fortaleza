@@ -64,6 +64,11 @@ html, body {
 #intro-screen .author {
   color: var(--fg-dim);
   font-size: 0.85rem;
+  margin-bottom: 0.3rem;
+}
+
+#intro-screen .author.adaptation {
+  font-size: 0.75rem;
   margin-bottom: 3rem;
 }
 

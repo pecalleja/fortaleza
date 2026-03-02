@@ -34,62 +34,62 @@ export default {
   // System messages
   messages: {
     welcome: 'Bienvenido a La Fortaleza.',
-    whatToDo: 'Que desea hacer?',
+    whatToDo: '¿Qué desea hacer?',
     ok: 'Ok.',
     dontUnderstand: 'No entiendo lo que usted quiere decir.',
     cantDoThat: 'Usted no puede hacer eso.',
     nothingHappens: 'No ocurre nada.',
     youAreIn: 'Usted se encuentra en ',
     youSee: 'Usted ve:',
-    nothingOfInterest: 'No hay nada de interes aqui.',
+    nothingOfInterest: 'No hay nada de interés aquí.',
 
     // Take/Drop
     taken: 'Ok.',
     dropped: 'Ok.',
-    tooHeavy: 'Seria demasiado peso.',
+    tooHeavy: 'Sería demasiado peso.',
     cantCarry: 'Usted no puede cargar con eso.',
     dontHaveIt: 'Usted no tiene eso.',
-    notHere: 'No hay nada con ese nombre aqui.',
+    notHere: 'No hay nada con ese nombre aquí.',
     dropAll: 'Usted ha dejado todo en el suelo.',
 
     // Doors
     doorClosed: 'OUCH! Usted se ha golpeado las narices. Trate de abrir antes.',
     doorAlreadyOpen: 'No es necesario.',
-    wrongPassword: 'Esas no son las palabras magicas.',
+    wrongPassword: 'Esas no son las palabras mágicas.',
     doorOpened: 'Ok.',
     riddleSolved: 'Usted ha descifrado el acertijo correctamente.',
     wrongAnswer: 'Esa no es la respuesta.',
-    oneWayWarning: 'Tenga cuidado. Por aqui se puede entrar, pero no se puede salir.',
-    needMagicWords: 'Necesita palabras magicas para abrir esta puerta.',
+    oneWayWarning: 'Tenga cuidado. Por aquí se puede entrar, pero no se puede salir.',
+    needMagicWords: 'Necesita palabras mágicas para abrir esta puerta.',
 
     // Combat
     guardLaugh: 'Ja ja ja. Todos sus esfuerzos son en vano. No es con eso que me pueden matar.',
     npcDeath: 'AAAAARRRGGGGG!!!',
     cantKill: 'No puede matar eso.',
-    killWhat: 'Matar a quien?',
-    killWith: 'Con que?',
+    killWhat: '¿Matar a quién?',
+    killWith: '¿Con qué?',
 
     // NPCs
     npcSilent: 'No desea hablar con usted.',
     thankYou: 'Muchas gracias. Hace mucho que esperaba por esto.',
-    giftRejected: 'Que amable! Gracias... pero no es lo que necesito.',
-    giveWhat: 'Dar que?',
-    giveToWhom: 'A quien?',
+    giftRejected: '¡Qué amable! Gracias... pero no es lo que necesito.',
+    giveWhat: '¿Dar qué?',
+    giveToWhom: '¿A quién?',
 
     // Hidden objects
     crash: 'CRASSSHHH!!!',
-    discovered: 'Usted ha descubierto algo!',
+    discovered: '¡Usted ha descubierto algo!',
     cantBreak: 'Usted trata, pero no lo consigue.',
-    breakWhat: 'Romper que?',
-    breakWith: 'Con que?',
+    breakWhat: '¿Romper qué?',
+    breakWith: '¿Con qué?',
 
     // Inventory
     inventoryTitle: 'Inventario:',
     emptyInventory: 'No lleva nada.',
     weightUnit: 'bolsas',
-    canCarryMore: 'Usted podria cargar {0} bolsas mas.',
-    almostFull: 'Usted esta a punto de agotar sus capacidades.',
-    completelyFull: 'Usted no puede ni con un atomo mas.',
+    canCarryMore: 'Usted podría cargar {0} bolsas más.',
+    almostFull: 'Usted está a punto de agotar sus capacidades.',
+    completelyFull: 'Usted no puede ni con un átomo más.',
 
     // Weigh
     weighs: '{0} pesa {1} bolsas.',
@@ -100,27 +100,27 @@ export default {
 
     // Game state
     youDied: 'Usted ha muerto.',
-    funeral: 'Su entierro se efectuara el proximo domingo a las 3:00 am. Esta invitado.',
+    funeral: 'Su entierro se efectuará el próximo domingo a las 3:00 am. Está invitado.',
     victory: 'Usted ha vencido a la Bestia.',
-    victoryMsg1: 'Parece ser una persona persistente y eso es un merito muy grande.',
-    victoryMsg2: 'La persistencia es indispensable para los que luchan por el bien, sobre todo porque los que luchan por el mal son muy persistentes tambien.',
-    victoryMsg3: 'Veremos si en la proxima version de La Fortaleza tiene igual suerte.',
+    victoryMsg1: 'Parece ser una persona persistente y eso es un mérito muy grande.',
+    victoryMsg2: 'La persistencia es indispensable para los que luchan por el bien, sobre todo porque los que luchan por el mal son muy persistentes también.',
+    victoryMsg3: 'Veremos si en la próxima versión de La Fortaleza tiene igual suerte.',
     victoryAuthor: '                                             Un servidor:\n                                             M. Cepero',
 
     // Save/Load
     gameSaved: 'Partida guardada.',
     gameLoaded: 'Partida cargada.',
-    noSaveFound: 'No se encontro ninguna partida guardada.',
+    noSaveFound: 'No se encontró ninguna partida guardada.',
 
     // Help
     helpTitle: 'Comandos disponibles:',
     helpCommands: [
-      'IR/ATRAVESAR/CRUZAR [puerta] - Ir a traves de una puerta',
+      'IR/ATRAVESAR/CRUZAR [puerta] - Ir a través de una puerta',
       'TOMAR/COGER [objeto] - Recoger un objeto',
       'SOLTAR/DEJAR [objeto] - Dejar un objeto (DEJAR TODO para dejar todos)',
-      'ABRIR [puerta] CON [clave] - Abrir una puerta con una contrasena',
+      'ABRIR [puerta] CON [clave] - Abrir una puerta con una contraseña',
       'MATAR [enemigo] CON [arma] - Atacar a un enemigo',
-      'OBSERVAR/MIRAR - Observar la habitacion',
+      'OBSERVAR/MIRAR - Observar la habitación',
       'VER/LEER [objeto] - Examinar un objeto',
       'ROMPER [objeto] CON [herramienta] - Romper un objeto',
       'PREGUNTAR [personaje] - Hablar con un personaje',
@@ -133,13 +133,14 @@ export default {
     ],
 
     // Greeting
-    goodMorning: 'Buenos dias.',
+    goodMorning: 'Buenos días.',
     goodAfternoon: 'Buenas tardes.',
     goodEvening: 'Buenas noches.',
 
     // Intro
     introTitle: 'LA FORTALEZA',
-    introSubtitle: 'En las entranas de la Bestia',
+    introSubtitle: 'En las entrañas de la Bestia',
     introAuthor: 'por Miguel Cepero - Merchise Group',
+    introAdaptation: 'Adaptación web por Pedro Calleja con Claude Code AI',
   }
 };
