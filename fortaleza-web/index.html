@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>La Fortaleza - En las entranas de la Bestia</title>
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+  <!-- INTRO SCREEN -->
+  <div id="intro-screen">
+    <h1 id="intro-title">LA FORTALEZA</h1>
+    <h2 id="intro-subtitle">En las entranas de la Bestia</h2>
+    <div class="author" id="intro-author">por Miguel Cepero - Merchise Group</div>
+    <div id="intro-story"></div>
+    <button id="start-btn">COMENZAR</button>
+  </div>
+
+  <!-- GAME CONTAINER -->
+  <div id="game-container">
+    <!-- Header -->
+    <div id="header">
+      <h1>LA FORTALEZA</h1>
+      <div id="header-controls">
+        <button class="lang-btn active" data-lang="es">ES</button>
+        <button class="lang-btn" data-lang="en">EN</button>
+        <button id="restart-btn">NEW</button>
+      </div>
+    </div>
+
+    <!-- Terminal Output -->
+    <div id="terminal"></div>
+
+    <!-- Sidebar -->
+    <div id="sidebar">
+      <!-- Inventory Panel -->
+      <div class="panel" id="inventory-panel">
+        <h3 id="inv-title">INVENTARIO</h3>
+        <ul id="inventory-list"></ul>
+        <div id="weight-bar"><div id="weight-fill"></div></div>
+        <div id="weight-text"></div>
+      </div>
+
+      <!-- Location Panel -->
+      <div class="panel" id="location-panel">
+        <h3 id="loc-title">UBICACION</h3>
+        <div id="location-name"></div>
+        <ul id="exits-list"></ul>
+        <div id="progress-text"></div>
+      </div>
+    </div>
+
+    <!-- Quick Action Buttons -->
+    <div id="quick-actions"></div>
+
+    <!-- Input Area -->
+    <div id="input-area">
+      <input type="text" id="command-input" placeholder="Escriba un comando..." autocomplete="off" autofocus>
+      <button id="send-btn">OK</button>
+    </div>
+  </div>
+
+  <script type="module" src="js/main.js"></script>
+</body>
+</html>

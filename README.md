@@ -8,6 +8,22 @@ You can read more about them here:
  * [Merchise Group][2].
  * [Fortaleza 1][3] (in Spanish)
 
+## Play Online (Web Version)
+
+A modern web browser rebuild of La Fortaleza is available at:
+
+**https://pecalleja.github.io/fortaleza/**
+
+Features:
+  - Retro terminal aesthetic (green text on dark background)
+  - Bilingual: play in Spanish or English (toggle in the header)
+  - Hybrid input: type commands or click quick-action buttons
+  - Save/load game progress in the browser
+
+The web version source code is in the `fortaleza-web/` directory. See
+[fortaleza-web/README.md](fortaleza-web/README.md) for local development
+instructions.
+
 ## Building
 
 There is an [open issue][6] for tracking progress trying to build this repo.
