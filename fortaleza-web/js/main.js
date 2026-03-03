@@ -64,6 +64,20 @@ const storyEn = [
 // --- Initialization ---
 
 function init() {
+  // Read language from URL query parameter
+  const urlParams = new URLSearchParams(window.location.search);
+  const urlLang = urlParams.get('lang');
+  if (urlLang === 'en' || urlLang === 'es') {
+    i18n.setLang(urlLang);
+  }
+
+  // Sync <html lang> attribute and button states with the resolved language
+  const lang = i18n.getLang();
+  document.documentElement.lang = lang;
+  document.querySelectorAll('.lang-btn').forEach(btn => {
+    btn.classList.toggle('active', btn.dataset.lang === lang);
+  });
+
   updateIntro();
   setupEventListeners();
 }
@@ -286,6 +300,14 @@ function createQuickBtn(text, className, onClick) {
 function setLanguage(lang) {
   i18n.setLang(lang);
 
+  // Update <html lang> attribute
+  document.documentElement.lang = lang;
+
+  // Update URL without page reload
+  const url = new URL(window.location);
+  url.searchParams.set('lang', lang);
+  history.replaceState(null, '', url);
+
   document.querySelectorAll('.lang-btn').forEach(btn => {
     btn.classList.toggle('active', btn.dataset.lang === lang);
   });
@@ -369,6 +391,27 @@ function setupEventListeners() {
       commandInput.focus();
     }
   });
+
+  // Mobile: scroll input into view when virtual keyboard opens
+  commandInput.addEventListener('focus', () => {
+    setTimeout(() => {
+      commandInput.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+    }, 300);
+  });
+
+  // Mobile: track visual viewport for virtual keyboard handling
+  if (window.visualViewport) {
+    window.visualViewport.addEventListener('resize', () => {
+      document.documentElement.style.setProperty(
+        '--viewport-height',
+        `${window.visualViewport.height}px`
+      );
+    });
+    document.documentElement.style.setProperty(
+      '--viewport-height',
+      `${window.visualViewport.height}px`
+    );
+  }
 }
 
 // --- Start ---

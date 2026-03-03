@@ -21,6 +21,16 @@
 
 * { box-sizing: border-box; margin: 0; padding: 0; }
 
+/* Touch optimizations */
+html {
+  -webkit-text-size-adjust: 100%;
+  touch-action: manipulation;
+}
+
+button, input {
+  touch-action: manipulation;
+}
+
 html, body {
   height: 100%;
   background: var(--bg);
@@ -69,7 +79,19 @@ html, body {
 
 #intro-screen .author.adaptation {
   font-size: 0.75rem;
-  margin-bottom: 3rem;
+  margin-bottom: 1.5rem;
+}
+
+#intro-lang-toggle {
+  display: flex;
+  gap: 12px;
+  margin-bottom: 2rem;
+}
+
+#intro-lang-toggle .lang-btn {
+  padding: 6px 18px;
+  font-size: 0.85rem;
+  letter-spacing: 0.1em;
 }
 
 #intro-story {
@@ -112,6 +134,8 @@ html, body {
   grid-template-columns: 1fr 280px;
   grid-template-rows: auto 1fr auto auto;
   height: 100vh;
+  height: 100dvh;
+  height: var(--viewport-height, 100dvh);
   gap: 8px;
   padding: 8px;
 }
@@ -446,17 +470,115 @@ html, body {
     overflow-x: auto;
     overflow-y: hidden;
     gap: 8px;
+    -webkit-overflow-scrolling: touch;
+    scroll-snap-type: x mandatory;
+    padding-bottom: 8px;
   }
 
-  .panel { min-width: 200px; flex-shrink: 0; }
+  #sidebar::after {
+    content: '';
+    flex-shrink: 0;
+    width: 8px;
+  }
+
+  .panel {
+    min-width: 200px;
+    flex-shrink: 0;
+    scroll-snap-align: start;
+  }
 
   #terminal { min-height: 300px; }
+
+  /* Touch-friendly quick action buttons */
+  .quick-btn {
+    min-height: 44px;
+    min-width: 44px;
+    padding: 8px 14px;
+    font-size: 0.85rem;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  /* Touch-friendly header buttons */
+  .lang-btn,
+  #restart-btn,
+  #sound-btn {
+    min-height: 44px;
+    min-width: 44px;
+    padding: 6px 12px;
+    font-size: 0.85rem;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  /* Touch-friendly send button */
+  #send-btn {
+    min-height: 44px;
+    min-width: 48px;
+    padding: 10px 18px;
+  }
+
+  /* Touch-friendly exit list items */
+  #exits-list li {
+    min-height: 44px;
+    display: flex;
+    align-items: center;
+    padding: 4px 0;
+  }
+
+  /* Prevents iOS zoom on input focus */
+  #command-input {
+    font-size: 16px;
+    padding: 10px 12px;
+    min-height: 44px;
+  }
+
+  /* Quick actions area: more room on mobile */
+  #quick-actions {
+    max-height: 120px;
+    gap: 6px;
+    padding: 6px 0;
+  }
+
+  /* Input area stays visible above keyboard */
+  #input-area {
+    position: sticky;
+    bottom: 0;
+    background: var(--bg);
+    padding: 6px 0;
+    z-index: 10;
+  }
+
+  /* Intro screen: scrollable on mobile */
+  #intro-screen {
+    padding: 1.5rem 1rem;
+    justify-content: flex-start;
+    padding-top: 10vh;
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+  }
 
   #intro-screen h1 { font-size: 2rem; }
 
   #intro-story {
     font-size: 0.8rem;
-    max-height: 200px;
+    max-height: none;
+    overflow-y: visible;
+    padding: 0 0.5rem;
+  }
+
+  #start-btn {
+    min-height: 48px;
+    padding: 14px 40px;
+    font-size: 1rem;
+    margin-bottom: 2rem;
+  }
+
+  #intro-lang-toggle .lang-btn {
+    min-height: 44px;
+    min-width: 44px;
   }
 }
 
@@ -467,5 +589,16 @@ html, body {
 
   .panel { padding: 8px; }
 
+  #intro-screen { padding-top: 5vh; }
+
   #intro-screen h1 { font-size: 1.5rem; letter-spacing: 0.15em; }
+
+  #intro-screen h2 {
+    font-size: 1rem;
+    margin-bottom: 1rem;
+  }
+
+  #intro-screen .author.adaptation {
+    margin-bottom: 1.5rem;
+  }
 }
