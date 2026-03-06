@@ -793,6 +793,13 @@ export class GameEngine {
     };
   }
 
+  isDangerousDoor(door) {
+    if (!door || !door.isLinking) return false;
+    if (door.talisman && !this.player.hasItem(door.talisman)) return true;
+    if (door.forbiddenItem && this.player.hasItem(door.forbiddenItem)) return true;
+    return false;
+  }
+
   restart() {
     this.player = new Player();
     this.rooms = {};

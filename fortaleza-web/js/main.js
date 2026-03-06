@@ -127,6 +127,29 @@ function startGame() {
   commandInput.focus();
 }
 
+// --- Language-aware command builder ---
+
+function langCmd(action, obj) {
+  const lang = i18n.getLang();
+  const verbMap = {
+    go:        { es: 'ir',          en: 'go' },
+    take:      { es: 'tomar',       en: 'take' },
+    drop:      { es: 'soltar',      en: 'drop' },
+    look:      { es: 'mirar',       en: 'look' },
+    see:       { es: 'ver',         en: 'examine' },
+    ask:       { es: 'preguntar',   en: 'talk' },
+    break:     { es: 'romper',      en: 'break' },
+    inventory: { es: 'inventario',  en: 'inventory' },
+    help:      { es: 'ayuda',       en: 'help' },
+    save:      { es: 'salvar',      en: 'save' },
+    load:      { es: 'cargar',      en: 'load' },
+  };
+  const verb = verbMap[action]?.[lang] || action;
+  if (!obj) return verb;
+  const name = i18n.objectName(obj);
+  return `${verb} ${name}`;
+}
+
 // --- Terminal Output ---
 
 function printLine(text, type = 'normal') {
@@ -197,12 +220,27 @@ function updateInventory() {
   for (const item of engine.player.inventory) {
     const li = document.createElement('li');
     const nameSpan = document.createElement('span');
+    nameSpan.className = 'inv-item-name';
     nameSpan.textContent = i18n.objectName(item);
+    nameSpan.title = lang === 'en' ? 'Examine' : 'Examinar';
+    nameSpan.addEventListener('click', () => submitCommand(langCmd('see', item)));
+    const actionsSpan = document.createElement('span');
+    actionsSpan.className = 'inv-item-actions';
     const weightSpan = document.createElement('span');
     weightSpan.className = 'item-weight';
     weightSpan.textContent = `(${item.weight})`;
+    const dropBtn = document.createElement('button');
+    dropBtn.className = 'inv-drop-btn';
+    dropBtn.textContent = '\u2716';
+    dropBtn.title = lang === 'en' ? 'Drop' : 'Soltar';
+    dropBtn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      submitCommand(langCmd('drop', item));
+    });
+    actionsSpan.appendChild(weightSpan);
+    actionsSpan.appendChild(dropBtn);
     li.appendChild(nameSpan);
-    li.appendChild(weightSpan);
+    li.appendChild(actionsSpan);
     inventoryList.appendChild(li);
   }
 
@@ -230,9 +268,17 @@ function updateLocation() {
   while (exitsList.firstChild) exitsList.removeChild(exitsList.firstChild);
   for (const link of room.getLinks()) {
     const li = document.createElement('li');
+    const isDanger = engine.isDangerousDoor(link);
     li.textContent = i18n.objectName(link);
+    if (isDanger) li.classList.add('exit-danger');
     li.addEventListener('click', () => {
-      submitCommand(`ir ${link.nameEs}`);
+      if (isDanger) {
+        const msg = lang === 'en'
+          ? `This passage looks dangerous. Are you sure you want to enter "${i18n.objectName(link)}"?`
+          : `Este pasaje parece peligroso. \u00BFEst\u00E1 seguro de que desea entrar por "${i18n.objectName(link)}"?`;
+        if (!confirm(msg)) return;
+      }
+      submitCommand(langCmd('go', link));
     });
     exitsList.appendChild(li);
   }
@@ -250,41 +296,68 @@ function updateQuickActions() {
   const lang = i18n.getLang();
   const actions = engine.getAvailableActions();
 
-  // Door buttons
+  // Door buttons - click to go through (with danger warning)
   for (const door of actions.doors) {
+    const isDanger = engine.isDangerousDoor(door);
+    const icon = isDanger ? '\u26A0\uFE0F' : door.isOpen ? '\uD83D\uDEAA' : '\uD83D\uDD12';
     quickActions.appendChild(createQuickBtn(
-      `> ${i18n.objectName(door)}`,
-      'door-btn',
-      () => submitCommand(`ir ${door.nameEs}`)
+      `${icon} ${i18n.objectName(door)}`,
+      `door-btn${isDanger ? ' danger-btn' : ''}`,
+      () => {
+        if (isDanger) {
+          const msg = lang === 'en'
+            ? `This passage looks dangerous. Are you sure you want to enter "${i18n.objectName(door)}"?`
+            : `Este pasaje parece peligroso. \u00BFEst\u00E1 seguro de que desea entrar por "${i18n.objectName(door)}"?`;
+          if (!confirm(msg)) return;
+        }
+        submitCommand(langCmd('go', door));
+      }
     ));
   }
 
-  // Item buttons (take)
+  // Item buttons - click to examine then take
   for (const item of actions.items) {
     quickActions.appendChild(createQuickBtn(
-      `+ ${i18n.objectName(item)}`,
+      `\uD83D\uDCE6 ${i18n.objectName(item)}`,
       'item-btn',
-      () => submitCommand(`tomar ${item.nameEs}`)
+      () => {
+        submitCommand(langCmd('see', item));
+        submitCommand(langCmd('take', item));
+      }
     ));
   }
 
-  // NPC buttons (ask)
+  // NPC buttons - click to examine then talk
   for (const npc of actions.npcs) {
     quickActions.appendChild(createQuickBtn(
-      `? ${i18n.objectName(npc)}`,
+      `\uD83D\uDDE3\uFE0F ${i18n.objectName(npc)}`,
       'npc-btn',
-      () => submitCommand(`preguntar ${npc.nameEs}`)
+      () => {
+        submitCommand(langCmd('see', npc));
+        submitCommand(langCmd('ask', npc));
+      }
+    ));
+  }
+
+  // Hidden object buttons - click to examine
+  for (const hidden of actions.hiddens) {
+    quickActions.appendChild(createQuickBtn(
+      `\uD83D\uDD0D ${i18n.objectName(hidden)}`,
+      'hidden-btn',
+      () => submitCommand(langCmd('see', hidden))
     ));
   }
 
   // Always-visible action buttons
   const lookLabel = lang === 'en' ? 'LOOK' : 'MIRAR';
-  const invLabel = lang === 'en' ? 'INVENTORY' : 'INVENTARIO';
+  const invLabel  = lang === 'en' ? 'INVENTORY' : 'INVENTARIO';
+  const saveLabel = lang === 'en' ? 'SAVE' : 'GUARDAR';
   const helpLabel = lang === 'en' ? 'HELP' : 'AYUDA';
 
-  quickActions.appendChild(createQuickBtn(lookLabel, 'action-btn', () => submitCommand('mirar')));
-  quickActions.appendChild(createQuickBtn(invLabel, 'action-btn', () => submitCommand('inventario')));
-  quickActions.appendChild(createQuickBtn(helpLabel, 'action-btn', () => submitCommand('ayuda')));
+  quickActions.appendChild(createQuickBtn(`\uD83D\uDC41\uFE0F ${lookLabel}`, 'action-btn', () => submitCommand(langCmd('look'))));
+  quickActions.appendChild(createQuickBtn(`\uD83C\uDF92 ${invLabel}`, 'action-btn', () => submitCommand(langCmd('inventory'))));
+  quickActions.appendChild(createQuickBtn(`\uD83D\uDCBE ${saveLabel}`, 'action-btn', () => submitCommand(langCmd('save'))));
+  quickActions.appendChild(createQuickBtn(`\u2753 ${helpLabel}`, 'action-btn', () => submitCommand(langCmd('help'))));
 }
 
 function createQuickBtn(text, className, onClick) {
