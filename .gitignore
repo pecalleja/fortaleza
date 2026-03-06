@@ -2,3 +2,4 @@
 *.TPU
 *.OBJ
 node_modules/
+.temp/
