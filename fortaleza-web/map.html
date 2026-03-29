@@ -80,6 +80,29 @@ header .sub{font-size:10px;color:var(--dim);font-style:italic;letter-spacing:1px
 .zb:hover{border-color:var(--gold);color:var(--gold);}
 .zlbl{text-align:center;font-family:'Cinzel',serif;font-size:8px;color:var(--dim);background:rgba(10,6,3,.9);border:1px solid rgba(58,37,16,.4);border-radius:2px;padding:2px 4px;}
 .hint{position:fixed;bottom:14px;right:14px;z-index:300;font-size:9px;color:rgba(196,160,106,.22);text-align:right;line-height:2;pointer-events:none;font-style:italic;}
+/* Link labels: hidden by default, visible on hover or toggle */
+.lk-g .lk-bg{opacity:0;transition:opacity .12s;}
+.lk-g .lk-txt{opacity:0;transition:opacity .12s;}
+.lk-g:hover .lk-bg,.lk-g:hover .lk-txt{opacity:1;}
+#connsvg.show-labels .lk-bg,#connsvg.show-labels .lk-txt{opacity:1;}
+.zb.active{border-color:var(--gold);color:var(--gold);background:rgba(200,146,42,.12);}
+/* Win path panel */
+#winpath{position:fixed;left:0;top:50px;bottom:0;width:300px;z-index:400;background:#0e0a06;border-right:1px solid #3a2510;transform:translateX(-100%);transition:transform .28s cubic-bezier(.2,0,0,1);display:flex;flex-direction:column;overflow:hidden;}
+#winpath.open{transform:none;}
+#winpath .wh{padding:13px 15px 11px;background:#130e08;border-bottom:1px solid #3a2510;flex-shrink:0;position:relative;}
+#winpath .wh-title{font-family:'Cinzel',serif;font-size:13px;font-weight:700;color:var(--gold);}
+#winpath .wh-sub{font-size:9px;color:var(--dim);font-style:italic;margin-top:2px;}
+#winpath .wh-close{position:absolute;top:10px;right:11px;background:none;border:1px solid #3a2510;color:var(--dim);width:22px;height:22px;border-radius:2px;cursor:pointer;font-size:12px;display:flex;align-items:center;justify-content:center;}
+#winpath .wh-close:hover{border-color:var(--gold);color:var(--gold);}
+#winpath .wb{flex:1;overflow-y:auto;padding:12px 14px;scrollbar-width:thin;scrollbar-color:#3a2510 transparent;}
+.wp-phase{font-family:'Cinzel',serif;font-size:9px;letter-spacing:2px;color:var(--dim);text-transform:uppercase;margin:14px 0 6px;padding-bottom:4px;border-bottom:1px solid #2a1a0a;}
+.wp-phase:first-child{margin-top:0;}
+.wp-step{display:flex;gap:8px;align-items:flex-start;padding:5px 0;border-bottom:1px solid rgba(58,37,16,.25);}
+.wp-n{font-family:'Cinzel',serif;font-size:9px;color:var(--dim);flex-shrink:0;width:22px;text-align:right;}
+.wp-t{font-size:10px;color:var(--parch);line-height:1.5;}
+.wp-t .win{color:#e8b84b;font-weight:bold;}
+.wp-t .mv{color:#5aaa4a;font-style:italic;}
+.wp-t .pw{color:#8888ee;font-size:9px;}
 </style>
 </head>
 <body>
@@ -112,16 +135,27 @@ header .sub{font-size:10px;color:var(--dim);font-style:italic;letter-spacing:1px
   <div class="pb" id="pb"></div>
 </div>
 
+<div id="winpath">
+  <div class="wh">
+    <div class="wh-title">⭐ Minimum Win Path</div>
+    <div class="wh-sub">~27 steps · optimal route to victory</div>
+    <button class="wh-close" id="wp-close">✕</button>
+  </div>
+  <div class="wb" id="wb"></div>
+</div>
+
 <div class="zc">
   <button class="zb" id="zi">+</button>
   <div class="zlbl" id="zlbl">70%</div>
   <button class="zb" id="zo">−</button>
   <button class="zb" id="zf" title="Fit all">⊡</button>
   <button class="zb" id="zr" title="Reset layout" style="font-size:11px;font-family:'Cinzel',serif;">RST</button>
+  <button class="zb" id="zlb" title="Toggle labels" style="font-size:10px;font-family:'Cinzel',serif;">LBL</button>
+  <button class="zb" id="zwp" title="Win path">⭐</button>
 </div>
 <div class="hint">
-  Drag rooms to rearrange · Scroll/pinch to zoom<br>
-  Right-drag or middle-drag to pan · Click room to inspect
+  Drag rooms · Scroll to zoom · Click to inspect<br>
+  LBL = toggle link labels · ⭐ = win path guide
 </div>
 
 <script>
@@ -333,24 +367,54 @@ const ROOM_DESC={
 // DEFAULT POSITIONS (can be dragged and saved)
 // ═══════════════════════════════════════════════════════
 const W=116, H=72;
+// Layout zones: Entrance(top-left) → Hallway(top-center) → Garden hub(center)
+//   → Outer/Beast path(right) | Secret path(left column) | Labyrinth(bottom)
 const DEFAULT_POS={
-  1:{x:60,y:80},2:{x:220,y:80},3:{x:380,y:80},5:{x:380,y:195},4:{x:220,y:195},
-  6:{x:550,y:80},7:{x:715,y:80},10:{x:880,y:80},
-  8:{x:715,y:195},9:{x:880,y:195},11:{x:1045,y:195},
-  12:{x:550,y:320},13:{x:550,y:440},15:{x:715,y:320},
-  14:{x:380,y:320},16:{x:380,y:440},
-  23:{x:550,y:570},24:{x:715,y:570},25:{x:880,y:570},
-  17:{x:1045,y:570},18:{x:1045,y:440},
-  19:{x:1210,y:320},20:{x:1045,y:320},21:{x:1210,y:440},22:{x:1210,y:570},
-  26:{x:60,y:320},27:{x:60,y:440},28:{x:60,y:570},29:{x:60,y:720},
-  30:{x:220,y:720},50:{x:220,y:570},
-  31:{x:420,y:870},32:{x:570,y:870},33:{x:720,y:870},34:{x:870,y:870},
-  35:{x:1020,y:870},36:{x:1170,y:870},37:{x:1170,y:990},
-  38:{x:570,y:990},39:{x:720,y:990},40:{x:870,y:990},
-  41:{x:870,y:1110},42:{x:720,y:1110},43:{x:570,y:1110},
-  44:{x:420,y:1110},45:{x:420,y:990},
-  46:{x:1020,y:990},47:{x:1020,y:1110},48:{x:1170,y:1110},
-  49:{x:220,y:870},
+  // ENTRANCE ZONE
+  1:{x:60,  y:70},   2:{x:230, y:70},   3:{x:400, y:70},
+  4:{x:230, y:210},  5:{x:400, y:210},
+
+  // LIBRARY → HALLWAY (same row as entrance, extending right)
+  6:{x:570, y:70},   7:{x:740, y:70},
+  8:{x:910, y:70},   // Witch bedroom (right of hallway, for short R8↔R14 path)
+  9:{x:740, y:210},  // Warrior (below hallway)
+  10:{x:910, y:210}, 11:{x:910, y:350}, // Lab + Armory (column)
+
+  // GARDEN HUB (center-left, accessible from R6 book and R15)
+  12:{x:570, y:350}, // Baths (above garden)
+  13:{x:570, y:490}, // Garden hub
+  14:{x:1080,y:70},  // Maiden bedroom (right of witch, short R8→R14 line)
+  15:{x:740, y:350}, // Infusion (between warrior and garden)
+  16:{x:400, y:490}, // Dungeons (left of garden)
+
+  // OUTER → BEAST PATH (right half, garden row extending right)
+  23:{x:740, y:490}, // Storerooms
+  24:{x:910, y:490}, // Wasteland
+  25:{x:1080,y:490}, // Crystal Hall
+  17:{x:1250,y:490}, // Mouth of Beast
+  18:{x:1250,y:350}, // Inside Beast
+  19:{x:1420,y:210}, // Lungs
+  20:{x:1420,y:350}, // Stomach
+  21:{x:1420,y:490}, // Heart
+
+  // SECRET PATH (left column, straight down from R1)
+  27:{x:60,  y:350}, // Marble Bridge
+  28:{x:60,  y:490}, // Lab Antechamber
+  50:{x:60,  y:630}, // Fake Garden
+  30:{x:230, y:630}, // Hall of Chosen
+  22:{x:230, y:770}, // Brain (reachable only from R30)
+  26:{x:400, y:630}, // Death trap (isolated)
+
+  // LABYRINTH (bottom section)
+  49:{x:60,  y:770}, // Labyrinth exit → R28
+  31:{x:230, y:910}, 32:{x:400, y:910}, 33:{x:570, y:910},
+  34:{x:740, y:910}, 35:{x:910, y:910}, 36:{x:1080,y:910},
+  37:{x:1250,y:910}, 29:{x:1420,y:910}, // Minotaur (R37→R29)
+  38:{x:400, y:1050},39:{x:570, y:1050},40:{x:740, y:1050},
+  41:{x:740, y:1190},42:{x:570, y:1190},43:{x:400, y:1190},
+  44:{x:230, y:1190},45:{x:230, y:1050},
+  46:{x:910, y:1050},47:{x:910, y:1190}, // R29→R47
+  48:{x:1080,y:1190},
 };
 
 // Live positions (copy of defaults, mutated on drag)
@@ -385,60 +449,74 @@ function buildArrows(){
   });
 }
 
-// Map: linkId -> SVG group element for fast update
 const linkEls={};
 
 function cx(id){const p=pos[id];return p?p.x+W/2:null;}
 function cy(id){const p=pos[id];return p?p.y+H/2:null;}
 
+// Pre-build bidirectional pair set: key = "minId-maxId"
+function buildBidiSet(){
+  const s=new Set();
+  LINKS.forEach(lk=>{
+    if(LINKS.some(l=>l.f===lk.t&&l.t===lk.f))
+      s.add(`${Math.min(lk.f,lk.t)}-${Math.max(lk.f,lk.t)}`);
+  });
+  return s;
+}
+const BIDI=buildBidiSet();
+
 function initSVGLinks(){
-  // Remove all non-defs children
   [...svgEl.children].forEach(c=>{if(c.tagName!=='defs')svgEl.removeChild(c);});
-  // Count links per directional pair for offset
-  const pairCount={};
-  LINKS.forEach(lk=>{ const k=`${lk.f}-${lk.t}`; pairCount[k]=(pairCount[k]||0)+1; });
-  const pairIdx={};
 
   LINKS.forEach((lk,i)=>{
-    const k=`${lk.f}-${lk.t}`;
-    pairIdx[k]=(pairIdx[k]||0);
-    const myIdx=pairIdx[k];
-    pairIdx[k]++;
-    const total=pairCount[k];
-
     const st=TSTYLE[lk.type]||TSTYLE.open;
     const label=lk.pw?`${lk.n} 🔒`:lk.ans?`${lk.n} ❓`:lk.need?`${lk.n} ⚠️`:lk.tool?`${lk.n} 🔍`:lk.n;
-    const approxW=label.length*4.5+10;
+    const aw=label.length*5+12;
+    const pairKey=`${Math.min(lk.f,lk.t)}-${Math.max(lk.f,lk.t)}`;
+    const isBidi=BIDI.has(pairKey);
+    // forward = lower room ID is the source
+    const isForward=lk.f<lk.t;
+    // curve direction: bidi pairs curve apart; same-pair duplicates offset
+    const curveDir=isBidi?(isForward?1:-1):0;
 
     const g=document.createElementNS(NS,'g');
-    g.dataset.li=i;
-    g.dataset.f=lk.f;g.dataset.t=lk.t;
-    g.dataset.myIdx=myIdx;g.dataset.total=total;
-    g.dataset.label=label;g.dataset.aw=approxW;
-    g.dataset.stroke=st.stroke;g.dataset.arr=st.arr;
-    g.dataset.w=st.w;g.dataset.dash=st.dash;
+    g.setAttribute('class','lk-g');
+    g.dataset.f=lk.f; g.dataset.t=lk.t;
+    g.dataset.aw=aw; g.dataset.curve=curveDir;
+    g.dataset.stroke=st.stroke; g.dataset.arr=st.arr;
+    g.dataset.w=st.w; g.dataset.dash=st.dash;
 
-    // Line
-    const line=document.createElementNS(NS,'line');
-    line.setAttribute('stroke',st.stroke);
-    line.setAttribute('stroke-width',st.w);
-    if(st.dash!=='none')line.setAttribute('stroke-dasharray',st.dash);
-    line.setAttribute('marker-end','url(#arr-'+st.arr+')');
-    g.appendChild(line);
+    // Bezier path for the line
+    const path=document.createElementNS(NS,'path');
+    path.setAttribute('stroke',st.stroke);
+    path.setAttribute('stroke-width',st.w);
+    path.setAttribute('fill','none');
+    if(st.dash!=='none')path.setAttribute('stroke-dasharray',st.dash);
+    path.setAttribute('marker-end','url(#arr-'+st.arr+')');
+    g.appendChild(path);
 
-    // Label bg
+    // Wider invisible hit area for hover
+    const hit=document.createElementNS(NS,'path');
+    hit.setAttribute('stroke','transparent');
+    hit.setAttribute('stroke-width','12');
+    hit.setAttribute('fill','none');
+    g.appendChild(hit);
+
+    // Label background rect (hidden by default via CSS)
     const bg=document.createElementNS(NS,'rect');
-    bg.setAttribute('width',approxW);bg.setAttribute('height',13);bg.setAttribute('rx','2');
-    bg.setAttribute('fill','rgba(5,3,1,0.88)');
+    bg.setAttribute('class','lk-bg');
+    bg.setAttribute('width',aw); bg.setAttribute('height',14);
+    bg.setAttribute('rx','2'); bg.setAttribute('fill','rgba(5,3,1,0.92)');
+    bg.setAttribute('stroke',st.stroke); bg.setAttribute('stroke-width','0.5');
     g.appendChild(bg);
 
-    // Label text
+    // Label text (hidden by default via CSS)
+    const tc=st.stroke==='#3a6a2a'?'#5aaa4a':st.stroke==='#9b2020'?'#e06060':st.stroke==='#5050b0'?'#8888ee':st.stroke==='#8a5010'?'#d07030':'#c080f0';
     const txt=document.createElementNS(NS,'text');
-    txt.setAttribute('text-anchor','middle');txt.setAttribute('y','2');
-    txt.setAttribute('font-size','7.5');txt.setAttribute('font-family','Cinzel,serif');
-    txt.setAttribute('letter-spacing','0.4');
-    const tc=st.stroke==='#3a6a2a'?'#5aaa4a':st.stroke==='#9b2020'?'#e06060':st.stroke==='#5050b0'?'#8888ee':st.stroke==='#8a5010'?'#d07030':'#a060e0';
-    txt.setAttribute('fill',tc);
+    txt.setAttribute('class','lk-txt');
+    txt.setAttribute('text-anchor','middle');
+    txt.setAttribute('font-size','7.5'); txt.setAttribute('font-family','Cinzel,serif');
+    txt.setAttribute('letter-spacing','0.5'); txt.setAttribute('fill',tc);
     txt.textContent=label;
     g.appendChild(txt);
 
@@ -449,33 +527,39 @@ function initSVGLinks(){
 
 function updateLinkPositions(){
   for(let i=0;i<LINKS.length;i++){
-    const g=linkEls[i];
-    if(!g) continue;
-    const f=+g.dataset.f,t=+g.dataset.t;
-    const x1=cx(f),y1=cy(f),x2=cx(t),y2=cy(t);
+    const g=linkEls[i]; if(!g) continue;
+    const f=+g.dataset.f, t=+g.dataset.t;
+    const x1=cx(f), y1=cy(f), x2=cx(t), y2=cy(t);
     if(x1===null||x2===null||f===t) continue;
 
-    const myIdx=+g.dataset.myIdx,total=+g.dataset.total;
     const aw=+g.dataset.aw;
-    const dx=x2-x1,dy=y2-y1,len=Math.sqrt(dx*dx+dy*dy)||1;
-    const nx=-dy/len,ny=dx/len;
-    const offD=total>1?(myIdx-(total-1)/2)*9:0;
-    const ax1=x1+nx*offD,ay1=y1+ny*offD,ax2=x2+nx*offD,ay2=y2+ny*offD;
+    const curveDir=+g.dataset.curve; // -1, 0, or 1
 
-    const line=g.children[0];
-    line.setAttribute('x1',ax1);line.setAttribute('y1',ay1);
-    line.setAttribute('x2',ax2);line.setAttribute('y2',ay2);
+    const dx=x2-x1, dy=y2-y1, len=Math.sqrt(dx*dx+dy*dy)||1;
+    // Perpendicular unit vector
+    const nx=-dy/len, ny=dx/len;
+    // Curve offset: 18px for bidi pairs, 0 for one-way
+    const off=curveDir*18;
+    const cpx=(x1+x2)/2+nx*off;
+    const cpy=(y1+y2)/2+ny*off;
 
-    const mx=(ax1+ax2)/2,my=(ay1+ay2)/2;
-    const angle=Math.atan2(ay2-ay1,ax2-ax1)*180/Math.PI;
-    const ra=(angle>90||angle<-90)?angle+180:angle;
+    // Shorten end point to not overlap arrowhead into node center
+    const shrink=8;
+    const ex2=x2-dx/len*shrink, ey2=y2-dy/len*shrink;
 
-    const bg=g.children[1],txt=g.children[2];
-    bg.setAttribute('x',-aw/2);bg.setAttribute('y',-8);
-    const gt=`translate(${mx},${my}) rotate(${ra})`;
-    bg.setAttribute('transform',gt);
-    txt.setAttribute('transform',gt);
-    txt.setAttribute('x','0');
+    const d=`M${x1.toFixed(1)},${y1.toFixed(1)} Q${cpx.toFixed(1)},${cpy.toFixed(1)} ${ex2.toFixed(1)},${ey2.toFixed(1)}`;
+    g.children[0].setAttribute('d',d);
+    g.children[1].setAttribute('d',d); // hit area same path
+
+    // Midpoint of quadratic bezier at t=0.5
+    const mx=0.25*x1+0.5*cpx+0.25*x2;
+    const my=0.25*y1+0.5*cpy+0.25*y2;
+
+    // Label: always horizontal, centered on midpoint, 16px above curve midpoint
+    const lox=mx-aw/2, loy=my-off*0.3-18;
+    g.children[2].setAttribute('x',lox); g.children[2].setAttribute('y',loy);
+    // Text baseline: center in rect (rect height=14, so text y = rect.y + 10)
+    g.children[3].setAttribute('x',mx); g.children[3].setAttribute('y',loy+10);
   }
 }
 
@@ -732,6 +816,79 @@ vp.addEventListener('touchmove',e=>{
   }
 },{passive:false});
 vp.addEventListener('touchend',()=>{vpTouchStart=null;vpPanOrigin=null;vpTouchDist=null;},{passive:true});
+
+// ═══════════════════════════════════════════════════════
+// LABEL TOGGLE
+// ═══════════════════════════════════════════════════════
+document.getElementById('zlb').addEventListener('click',function(){
+  this.classList.toggle('active');
+  svgEl.classList.toggle('show-labels');
+});
+
+// ═══════════════════════════════════════════════════════
+// WIN PATH PANEL
+// ═══════════════════════════════════════════════════════
+const WIN_PATH=[
+  {phase:'Phase 1 — Gear up'},
+  {n:1, t:'<span class="mv">R1</span>: Take <b>Mace</b> + <b>Cherry Cake</b>'},
+  {n:2, t:'<span class="mv">R1→R4→R6</span> (tunnel + green door)'},
+  {n:3, t:'<span class="mv">R6</span>: Kill <b>Cyclops</b> with Mace → learn <span class="pw">"nombus rostomelaris"</span>'},
+  {n:4, t:'Open door, <span class="mv">R6→R7</span>: Take <b>Torch</b>'},
+  {n:5, t:'<span class="mv">R7→R8</span>: Take <b>Magic Powder</b> · back to R7'},
+  {n:6, t:'<span class="mv">R7→R15→R13→R14</span>: Take <b>Unicorn Heart</b> + <b>Painting</b>'},
+  {n:7, t:'<span class="mv">R14→R13→R16</span>: Take <b>Air Talisman</b>'},
+  {n:8, t:'<span class="mv">R16→R13→R23</span>: Take <b>Axe</b>'},
+  {phase:'Phase 2 — Armory'},
+  {n:9, t:'<span class="mv">R23→R13→R15→R7→R9</span>: Break <b>Bed</b> with Axe'},
+  {n:10,t:'<span class="mv">R9→R11</span>: Take <b>Sword + Dagger + Whip + Battering Ram</b>'},
+  {phase:'Phase 3 — First victory'},
+  {n:11,t:'<span class="mv">R11→R9→R7→R15→R13→R12</span>: Kill <b>Troll</b> with any weapon <span class="win">⭐ WIN #1</span>'},
+  {phase:'Phase 4 — Open beast path'},
+  {n:12,t:'<span class="mv">R12→R13→R23→R24</span>: Kill <b>Wolf</b> with Whip → learn <span class="pw">"agua"</span>'},
+  {n:13,t:'Open R24→R25 <span class="pw">(agua)</span>, answer riddle <span class="pw">"rumpelstinskin"</span>'},
+  {n:14,t:'<span class="mv">R25→R17→R18</span>: Enter the Beast'},
+  {phase:'Phase 5 — Beast interior'},
+  {n:15,t:'<span class="mv">R18→R19</span> (Air Talisman): Kill <b>Lung Center</b> w/ Sword <span class="win">⭐ WIN #2</span>'},
+  {n:16,t:'<span class="mv">R18→R20</span> (Cherry Cake): Kill <b>Stomach Center</b> w/ Whip <span class="win">⭐ WIN #3</span>'},
+  {n:17,t:'<span class="mv">R18→R21</span> (Unicorn Heart): Kill <b>Heart Center</b> w/ Dagger <span class="win">⭐ WIN #4</span>'},
+  {phase:'Phase 6 — Return to secret path'},
+  {n:18,t:'<span class="mv">R21→R18→R17→R25→R24→R1</span> (via Well in R24)'},
+  {n:19,t:'<span class="mv">R1</span>: Break <b>Lonely Wall</b> with Battering Ram → secret door'},
+  {n:20,t:'<span class="mv">R1→R27</span> (need Torch): Take <b>Hammer</b>, break <b>Satan Statue</b> with Painting'},
+  {n:21,t:'<span class="mv">R27→R28</span> (hidden door)'},
+  {phase:'Phase 7 — Labyrinth'},
+  {n:22,t:'<span class="mv">R28→R31→R32→R33→R34→R35→R36→R37→R29</span>'},
+  {n:23,t:'<span class="mv">R29</span>: Kill <b>Minotaur</b> with Sword → Take <b>Antorcha 3</b>'},
+  {n:24,t:'<span class="mv">R29→R47→R48→R49→R28</span> (labyrinth exit)'},
+  {phase:'Phase 8 — Brain'},
+  {n:25,t:'<span class="mv">R28</span>: Break <b>Crystal Column</b> with Antorcha 3'},
+  {n:26,t:'<span class="mv">R28</span>: Break revealed <b>Wooden Door</b> with Hammer → R28→R50'},
+  {n:27,t:'<span class="mv">R50</span>: Answer <span class="pw">"seis"</span> (iron door) → R30'},
+  {n:28,t:'<span class="mv">R30</span>: Answer <span class="pw">"cdfghjklmnopqruvwxyz"</span> (consonants only)'},
+  {n:29,t:'<span class="mv">R30→R22</span>: Kill <b>Brain Center</b> with Torch <span class="win">⭐ WIN #5 → VICTORY! 🏆</span>'},
+];
+
+(function buildWinPath(){
+  let html='';
+  WIN_PATH.forEach(s=>{
+    if(s.phase){
+      html+=`<div class="wp-phase">${s.phase}</div>`;
+    } else {
+      html+=`<div class="wp-step"><div class="wp-n">${s.n}.</div><div class="wp-t">${s.t}</div></div>`;
+    }
+  });
+  document.getElementById('wb').innerHTML=html;
+})();
+
+document.getElementById('zwp').addEventListener('click',function(){
+  const wp=document.getElementById('winpath');
+  wp.classList.toggle('open');
+  this.classList.toggle('active');
+});
+document.getElementById('wp-close').addEventListener('click',()=>{
+  document.getElementById('winpath').classList.remove('open');
+  document.getElementById('zwp').classList.remove('active');
+});
 
 // ═══════════════════════════════════════════════════════
 // INIT
