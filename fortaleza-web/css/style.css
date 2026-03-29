@@ -188,7 +188,7 @@ html, body {
 
 .lang-btn:hover { color: var(--fg); border-color: var(--fg); }
 
-#sound-btn, #restart-btn {
+#sound-btn, #restart-btn, #map-btn {
   background: transparent;
   color: var(--fg-dim);
   border: 1px solid var(--fg-dim);
@@ -197,9 +197,12 @@ html, body {
   font-size: 0.75rem;
   cursor: pointer;
   transition: all 0.2s;
+  text-decoration: none;
+  display: inline-flex;
+  align-items: center;
 }
 
-#sound-btn:hover, #restart-btn:hover {
+#sound-btn:hover, #restart-btn:hover, #map-btn:hover {
   color: var(--fg);
   border-color: var(--fg);
 }
@@ -546,7 +549,8 @@ html, body {
   /* Touch-friendly header buttons */
   .lang-btn,
   #restart-btn,
-  #sound-btn {
+  #sound-btn,
+  #map-btn {
     min-height: 44px;
     min-width: 44px;
     padding: 6px 12px;

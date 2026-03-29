@@ -1740,7 +1740,7 @@ export const hiddenObjects = [
       nameEn: 'Clover',
       descEs: 'Es un duende muy pequeño.',
       descEn: 'It is a very small elf.',
-      wantsItem: 'vaso-agua',
+      wantsItem: 'Vaso de agua',
       unhappyMsgEs: 'Dame agua, por favor...',
       unhappyMsgEn: 'Give me water, please...',
       happyMsgEs: 'Busca a la doncella al lado del espejo que romperas con un hueso. Ella te dira donde esta el final de la Bestia.',
@@ -1755,7 +1755,7 @@ export const hiddenObjects = [
     descEs: 'Es un espejo opaco.',
     descEn: 'It is an opaque mirror.',
     roomId: 5,
-    breakerItem: 'hueso-gato',
+    breakerItem: 'Hueso de gato',
     revealedThingData: {
       type: 'linking',
       id: 'puerta-oculta-5',
@@ -1827,7 +1827,7 @@ export const hiddenObjects = [
     descEs: 'Es una columna de cristal.',
     descEn: 'It is a crystal column.',
     roomId: 28,
-    breakerItem: 'antorcha-3',
+    breakerItem: 'Antorcha 3',
     revealedThingData: {
       type: 'hidden',
       id: 'puerta-madera-hidden',

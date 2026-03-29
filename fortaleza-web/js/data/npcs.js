@@ -208,6 +208,7 @@ export const npcs = [
     descEs: 'Es un gigante con un solo ojo.',
     descEn: 'It is a giant with one eye.',
     lethalWeapon: 'maza',
+    lethalWeaponEn: 'mace',
     confessionEs: 'Arrrggghhhh! Me has matado! Puedes pasar, la contraseña es "Nombus Rostomelaris"',
     confessionEn: 'Arrrggghhhh! You have killed me! You can pass, the password is "Nombus Rostomelaris"',
     roomId: 6
@@ -220,6 +221,7 @@ export const npcs = [
     descEs: 'Es una mujer con alas.',
     descEn: 'It is a woman with wings.',
     lethalWeapon: 'espada',
+    lethalWeaponEn: 'sword',
     confessionEs: 'Imnus humiscuol rastomislakis!! Con esta espada mataras a los pulmones de la Bestia.',
     confessionEn: 'Imnus humiscuol rastomislakis!! With this sword you will kill the lungs of the Beast.',
     roomId: 15
@@ -232,6 +234,7 @@ export const npcs = [
     descEs: 'Es el centro de los pulmones de la Bestia.',
     descEn: 'It is the center of the lungs of the Beast.',
     lethalWeapon: 'espada',
+    lethalWeaponEn: 'sword',
     confessionEs: '¡Usted ha destruido los pulmones! Solo con un látigo podrás destruir el estómago.',
     confessionEn: 'You have destroyed the lungs! Only with a whip can you destroy the stomach.',
     roomId: 19
@@ -244,6 +247,7 @@ export const npcs = [
     descEs: 'Es el centro del estómago de la Bestia.',
     descEn: 'It is the center of the stomach of the Beast.',
     lethalWeapon: 'latigo',
+    lethalWeaponEn: 'whip',
     confessionEs: '¡Usted ha matado al centro del estómago!',
     confessionEn: 'You have killed the center of the stomach!',
     roomId: 20
@@ -256,6 +260,7 @@ export const npcs = [
     descEs: 'Es el centro del corazón de la Bestia.',
     descEn: 'It is the center of the heart of the Beast.',
     lethalWeapon: 'daga',
+    lethalWeaponEn: 'dagger',
     confessionEs: '¡Usted ha destruido el corazón! Busca el cerebro de la bestia lejos de aquí. Solo el fuego puede destruirlo.',
     confessionEn: 'You have destroyed the heart! Look for the brain of the beast far from here. Only fire can destroy it.',
     roomId: 21
@@ -268,6 +273,7 @@ export const npcs = [
     descEs: 'Es el centro del cerebro de la Bestia. Usa la antorcha!',
     descEn: 'It is the center of the brain of the Beast. Use the torch!',
     lethalWeapon: 'antorcha',
+    lethalWeaponEn: 'torch',
     confessionEs: 'XVBCZXV XBVCZX BVZXC!!!!!',
     confessionEn: 'XVBCZXV XBVCZX BVZXC!!!!!',
     roomId: 22
@@ -280,6 +286,7 @@ export const npcs = [
     descEs: 'Es un hombre con cabeza de toro.',
     descEn: 'It is a man with the head of a bull.',
     lethalWeapon: 'espada',
+    lethalWeaponEn: 'sword',
     confessionEs: '¡Me has matado! Coge la antorcha del número divino y rompe la columna de cristal.',
     confessionEn: 'You have killed me! Take the torch of the divine number and break the crystal column.',
     roomId: 29
@@ -292,6 +299,7 @@ export const npcs = [
     descEs: 'Es un lobo muy grande.',
     descEn: 'It is a very large wolf.',
     lethalWeapon: 'latigo',
+    lethalWeaponEn: 'whip',
     confessionEs: 'AAARRRRGGGG!!!! La palabra mágica es "Agua".',
     confessionEn: 'AAARRRRGGGG!!!! The magic word is "Water".',
     roomId: 24

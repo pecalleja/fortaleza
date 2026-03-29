@@ -3,3 +3,5 @@
 *.OBJ
 node_modules/
 .temp/
+.DS_Store
+*.zip

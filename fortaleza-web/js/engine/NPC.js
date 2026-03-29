@@ -41,6 +41,7 @@ export class Guard extends GameObject {
     this.isNPC = true;
     this.isDead = false;
     this.lethalWeapon = data.lethalWeapon;
+    this.lethalWeaponEn = data.lethalWeaponEn;
     this.confessionEs = data.confessionEs;
     this.confessionEn = data.confessionEn || data.confessionEs;
   }
@@ -52,7 +53,10 @@ export class Guard extends GameObject {
   }
 
   die(weaponName) {
-    if (GameObject.normalize(weaponName) === GameObject.normalize(this.lethalWeapon)) {
+    const normalizedWeapon = GameObject.normalize(weaponName);
+    // Check against both Spanish and English weapon names
+    if (normalizedWeapon === GameObject.normalize(this.lethalWeapon) ||
+        (this.lethalWeaponEn && normalizedWeapon === GameObject.normalize(this.lethalWeaponEn))) {
       this.isDead = true;
       return { success: true };
     }

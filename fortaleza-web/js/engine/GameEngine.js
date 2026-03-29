@@ -97,11 +97,12 @@ export class GameEngine {
     // Create the revealed thing from data
     if (data.revealedThingData) {
       const rd = data.revealedThingData;
-      if (rd.isLink) {
+      const linkTypes = ['linking', 'openLink', 'dangerLink', 'dangerLink2', 'riddleLink'];
+      if (linkTypes.includes(rd.type)) {
         hidden.revealedThing = this.createLink(rd);
       } else if (rd.type === 'troll') {
         hidden.revealedThing = new Troll(rd);
-      } else if (rd.isHidden) {
+      } else if (rd.type === 'hidden') {
         hidden.revealedThing = this.createHidden(rd);
       } else {
         hidden.revealedThing = new GameObject(rd);
@@ -411,6 +412,7 @@ export class GameEngine {
     }
 
     if (target instanceof Guard) {
+      // Always use Spanish name for comparison since lethalWeapon is stored in Spanish
       const result = target.die(weapon.nameEs);
       if (result.success) {
         this.output(i18n.t('npcDeath'), 'combat');
@@ -419,6 +421,7 @@ export class GameEngine {
         this.output(i18n.t('guardLaugh'), 'combat');
       }
     } else if (target instanceof Troll) {
+      // Trolls can be killed with any weapon
       const result = target.die(weapon.nameEs);
       if (result.success) {
         this.output(i18n.t('npcDeath'), 'combat');
@@ -516,22 +519,28 @@ export class GameEngine {
 
     if (!toolName) { this.output(i18n.t('breakWith')); return; }
 
-    // Check player has tool (or it's in the room for some cases)
-    let hasTool = this.player.hasItem(toolName);
-    if (!hasTool) {
-      // Also check if the tool name matches an item in the room
-      const roomTool = room.findObject(toolName, lang);
-      if (roomTool && !roomTool.isLinking && !roomTool.isNPC && !roomTool.isHidden) {
-        hasTool = true;
+    // Find the actual tool item to get its Spanish name
+    let tool = this.player.findItem(toolName);
+    let toolSpanishName = null;
+
+    if (tool) {
+      // Player has the tool in inventory
+      toolSpanishName = tool.nameEs;
+    } else {
+      // Check if the tool is in the room
+      tool = room.findObject(toolName, lang);
+      if (tool && !tool.isLinking && !tool.isNPC && !tool.isHidden) {
+        toolSpanishName = tool.nameEs;
       }
     }
 
-    if (!hasTool) {
+    if (!toolSpanishName) {
       this.output(i18n.t('dontHaveIt'));
       return;
     }
 
-    const result = container.breakWith(toolName);
+    // Always use Spanish name for comparison since breakerItem is stored in Spanish
+    const result = container.breakWith(toolSpanishName);
     if (result.success && container.revealedThing) {
       this.output(i18n.t('crash'), 'effect');
       this.output(i18n.t('discovered'), 'effect');
