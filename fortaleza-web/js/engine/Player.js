@@ -46,6 +46,7 @@ export class Player {
   hasItem(name) {
     const normalized = GameObject.normalize(name);
     return this.inventory.some(item =>
+      item.id === name ||
       GameObject.normalize(item.nameEs) === normalized ||
       GameObject.normalize(item.nameEn) === normalized ||
       GameObject.normalize(item.nameEs).includes(normalized) ||
@@ -55,6 +56,9 @@ export class Player {
 
   findItem(name) {
     const normalized = GameObject.normalize(name);
+    // Check by item ID first (used by talisman/danger links)
+    const byId = this.inventory.find(item => item.id === name);
+    if (byId) return byId;
     return this.inventory.find(item =>
       GameObject.normalize(item.nameEs) === normalized ||
       GameObject.normalize(item.nameEn) === normalized

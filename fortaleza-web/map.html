@@ -19,7 +19,7 @@ header .sub{font-size:10px;color:var(--dim);font-style:italic;letter-spacing:1px
 #world{position:absolute;top:0;left:0;width:4000px;height:3000px;transform-origin:0 0;}
 #connsvg{position:absolute;top:0;left:0;width:4000px;height:3000px;pointer-events:none;overflow:visible;}
 
-/* Room nodes — now draggable */
+/* Room nodes */
 .rnode{
   position:absolute;width:116px;
   background:#120d08;border:1px solid #3a2510;border-radius:5px;
@@ -80,12 +80,14 @@ header .sub{font-size:10px;color:var(--dim);font-style:italic;letter-spacing:1px
 .zb:hover{border-color:var(--gold);color:var(--gold);}
 .zlbl{text-align:center;font-family:'Cinzel',serif;font-size:8px;color:var(--dim);background:rgba(10,6,3,.9);border:1px solid rgba(58,37,16,.4);border-radius:2px;padding:2px 4px;}
 .hint{position:fixed;bottom:14px;right:14px;z-index:300;font-size:9px;color:rgba(196,160,106,.22);text-align:right;line-height:2;pointer-events:none;font-style:italic;}
-/* Link labels: hidden by default, visible on hover or toggle */
-.lk-g .lk-bg{opacity:0;transition:opacity .12s;}
-.lk-g .lk-txt{opacity:0;transition:opacity .12s;}
-.lk-g:hover .lk-bg,.lk-g:hover .lk-txt{opacity:1;}
-#connsvg.show-labels .lk-bg,#connsvg.show-labels .lk-txt{opacity:1;}
+
+/* Link labels: visible by default */
+.lk-g .lk-bg{opacity:1;transition:opacity .12s;}
+.lk-g .lk-txt{opacity:1;transition:opacity .12s;}
+#connsvg.hide-labels .lk-bg,#connsvg.hide-labels .lk-txt{opacity:0;}
+#connsvg.hide-labels .lk-g:hover .lk-bg,#connsvg.hide-labels .lk-g:hover .lk-txt{opacity:1;}
 .zb.active{border-color:var(--gold);color:var(--gold);background:rgba(200,146,42,.12);}
+
 /* Win path panel */
 #winpath{position:fixed;left:0;top:50px;bottom:0;width:300px;z-index:400;background:#0e0a06;border-right:1px solid #3a2510;transform:translateX(-100%);transition:transform .28s cubic-bezier(.2,0,0,1);display:flex;flex-direction:column;overflow:hidden;}
 #winpath.open{transform:none;}
@@ -103,13 +105,16 @@ header .sub{font-size:10px;color:var(--dim);font-style:italic;letter-spacing:1px
 .wp-t .win{color:#e8b84b;font-weight:bold;}
 .wp-t .mv{color:#5aaa4a;font-style:italic;}
 .wp-t .pw{color:#8888ee;font-size:9px;}
+/* Save toast */
+.save-toast{position:fixed;top:60px;left:50%;transform:translateX(-50%);background:#1a1408;border:1px solid var(--gold);color:var(--gold);font-family:'Cinzel',serif;font-size:11px;padding:6px 18px;border-radius:3px;opacity:0;transition:opacity .3s;pointer-events:none;z-index:500;}
+.save-toast.show{opacity:1;}
 </style>
 </head>
 <body>
 <header>
   <div style="display:flex;align-items:center;gap:16px;">
     <a href="index.html" style="font-family:'Cinzel',serif;font-size:9px;color:var(--dim);border:1px solid var(--dim);padding:3px 10px;border-radius:2px;text-decoration:none;letter-spacing:2px;transition:all .15s;" onmouseover="this.style.color='var(--gold)';this.style.borderColor='var(--gold)'" onmouseout="this.style.color='var(--dim)';this.style.borderColor='var(--dim)'">← GAME</a>
-    <div><h1>LA FORTALEZA</h1><div class="sub">Draggable Room Map — drag rooms to rearrange · click to inspect</div></div>
+    <div><h1>LA FORTALEZA</h1><div class="sub">Planar Graph Map — Tutte embedding · drag to rearrange · click to inspect</div></div>
   </div>
   <div class="legend">
     <div class="leg"><svg><line x1="2" y1="6" x2="24" y2="6" stroke="#3a6a2a" stroke-width="2"/></svg>Open</div>
@@ -129,7 +134,7 @@ header .sub{font-size:10px;color:var(--dim);font-style:italic;letter-spacing:1px
 <div id="panel">
   <div class="ph">
     <div class="ph-id" id="ph-id">ROOM</div>
-    <div class="ph-name" id="ph-name">—</div>
+    <div class="ph-name" id="ph-name"></div>
     <button class="ph-close" id="ph-close">✕</button>
   </div>
   <div class="pb" id="pb"></div>
@@ -138,11 +143,13 @@ header .sub{font-size:10px;color:var(--dim);font-style:italic;letter-spacing:1px
 <div id="winpath">
   <div class="wh">
     <div class="wh-title">⭐ Minimum Win Path</div>
-    <div class="wh-sub">~27 steps · optimal route to victory</div>
+    <div class="wh-sub">~24 steps · optimal route assuming full knowledge</div>
     <button class="wh-close" id="wp-close">✕</button>
   </div>
   <div class="wb" id="wb"></div>
 </div>
+
+<div class="save-toast" id="save-toast">Layout saved</div>
 
 <div class="zc">
   <button class="zb" id="zi">+</button>
@@ -155,7 +162,8 @@ header .sub{font-size:10px;color:var(--dim);font-style:italic;letter-spacing:1px
 </div>
 <div class="hint">
   Drag rooms · Scroll to zoom · Click to inspect<br>
-  LBL = toggle link labels · ⭐ = win path guide
+  LBL = toggle link labels · ⭐ = win path guide<br>
+  Layout auto-saves on drag
 </div>
 
 <script>
@@ -175,10 +183,10 @@ const ROOMS={
   19:{name:"Lungs of Beast",zone:"beast"},20:{name:"Stomach of Beast",zone:"beast"},
   21:{name:"Heart of Beast",zone:"beast"},22:{name:"Brain of Beast",zone:"beast"},
   23:{name:"Storerooms",zone:"outer"},24:{name:"Wasteland",zone:"outer"},
-  25:{name:"Crystal Hall",zone:"outer"},26:{name:"Small Cell ⚠️",zone:"trap"},
+  25:{name:"Crystal Hall",zone:"outer"},26:{name:"Small Cell",zone:"trap"},
   27:{name:"Marble Bridge",zone:"lab"},28:{name:"Lab. Antechamber",zone:"lab"},
   29:{name:"Minotaur's Cave",zone:"lab"},30:{name:"Hall of Chosen",zone:"lab"},
-  50:{name:"Fake Garden ⚠️",zone:"lab"},
+  50:{name:"Fake Garden",zone:"lab"},
   31:{name:"Corridor",zone:"labyrinth"},32:{name:"Corridor",zone:"labyrinth"},
   33:{name:"Corridor",zone:"labyrinth"},34:{name:"Corridor",zone:"labyrinth"},
   35:{name:"Corridor",zone:"labyrinth"},36:{name:"Corridor",zone:"labyrinth"},
@@ -191,9 +199,10 @@ const ROOMS={
   49:{name:"Lab Exit",zone:"labyrinth"},
 };
 
+// Raw directional links (used for panel display)
 const LINKS=[
-  {f:1,t:2,n:"Main door",type:"locked",pw:"ábrete sésamo"},
-  {f:2,t:1,n:"Main door",type:"locked",pw:"ábrete sésamo"},
+  {f:1,t:2,n:"Main door",type:"locked",pw:"\u00e1brete s\u00e9samo"},
+  {f:2,t:1,n:"Main door",type:"locked",pw:"\u00e1brete s\u00e9samo"},
   {f:1,t:4,n:"Tunnel",type:"open"},
   {f:2,t:3,n:"Black door",type:"open"},{f:3,t:2,n:"Black door",type:"open"},
   {f:3,t:4,n:"Blue door",type:"open"},{f:4,t:3,n:"Blue door",type:"open"},
@@ -224,7 +233,7 @@ const LINKS=[
   {f:24,t:1,n:"Well",type:"open"},
   {f:25,t:17,n:"Triangular door",type:"riddle",ans:"rumpelstinskin"},
   {f:17,t:25,n:"Triangular door",type:"open"},
-  {f:25,t:26,n:"⚠️ Cloth door",type:"danger",need:"death trap"},
+  {f:25,t:26,n:"Cloth door",type:"danger",need:"death trap"},
   {f:17,t:18,n:"Throat",type:"open"},{f:18,t:17,n:"Throat",type:"open"},
   {f:18,t:19,n:"Trachea",type:"danger",need:"Air Talisman"},
   {f:19,t:18,n:"Trachea",type:"open"},
@@ -240,14 +249,14 @@ const LINKS=[
   {f:28,t:31,n:"Green door",type:"open"},
   {f:28,t:50,n:"Black door",type:"hidden",tool:"Torch 3 + Hammer"},
   {f:50,t:30,n:"Iron door",type:"riddle",ans:"seis"},
-  {f:50,t:26,n:"⚠️ All other doors",type:"danger",need:"death trap"},
+  {f:50,t:26,n:"All other doors",type:"danger",need:"death trap"},
   {f:30,t:22,n:"Golden door",type:"riddle",ans:"cdfghjklmnopqruvwxyz"},
   {f:29,t:47,n:"Door",type:"open"},
   {f:31,t:32,n:"Door 1",type:"open"},{f:32,t:31,n:"Door 1",type:"open"},
   {f:31,t:38,n:"Door 3",type:"open"},{f:38,t:31,n:"Door 3",type:"open"},
   {f:32,t:33,n:"Door 2",type:"open"},{f:33,t:32,n:"Door 2",type:"open"},
   {f:32,t:44,n:"Door 3",type:"open"},
-  {f:33,t:26,n:"⚠️ Door 1",type:"danger",need:"trap"},
+  {f:33,t:26,n:"Door 1",type:"danger",need:"trap"},
   {f:33,t:34,n:"Door 3",type:"open"},{f:34,t:33,n:"Door 3",type:"open"},
   {f:34,t:35,n:"Door 1",type:"open"},{f:35,t:34,n:"Door 1",type:"open"},
   {f:34,t:41,n:"Door 2",type:"open"},
@@ -255,16 +264,16 @@ const LINKS=[
   {f:35,t:46,n:"Door 3",type:"open"},
   {f:36,t:37,n:"Door 3",type:"open"},{f:37,t:36,n:"Door 3",type:"open"},
   {f:36,t:49,n:"Door 1",type:"open"},
-  {f:37,t:29,n:"Door 1 ✓",type:"open"},{f:37,t:31,n:"Door 2",type:"open"},
-  {f:38,t:26,n:"⚠️ Door 1",type:"danger",need:"trap"},
+  {f:37,t:29,n:"Door 1",type:"open"},{f:37,t:31,n:"Door 2",type:"open"},
+  {f:38,t:26,n:"Door 1",type:"danger",need:"trap"},
   {f:38,t:39,n:"Door 2",type:"open"},{f:39,t:38,n:"Door 2",type:"open"},
   {f:39,t:40,n:"Door 3",type:"open"},{f:40,t:39,n:"Door 3",type:"open"},
-  {f:40,t:26,n:"⚠️ Door 2",type:"danger",need:"trap"},
+  {f:40,t:26,n:"Door 2",type:"danger",need:"trap"},
   {f:41,t:33,n:"Door 1",type:"open"},{f:41,t:34,n:"Door 2",type:"open"},
   {f:41,t:42,n:"Door 3",type:"open"},{f:42,t:41,n:"Door 3",type:"open"},
   {f:42,t:32,n:"Door 1",type:"open"},
   {f:42,t:43,n:"Door 2",type:"open"},{f:43,t:42,n:"Door 2",type:"open"},
-  {f:43,t:26,n:"⚠️ Door 1",type:"danger",need:"trap"},
+  {f:43,t:26,n:"Door 1",type:"danger",need:"trap"},
   {f:43,t:44,n:"Door 3",type:"open"},{f:44,t:43,n:"Door 3",type:"open"},
   {f:44,t:31,n:"Door 3",type:"open"},{f:44,t:32,n:"Door 2",type:"open"},
   {f:44,t:45,n:"Door 1",type:"open"},{f:45,t:44,n:"Door 1",type:"open"},
@@ -276,65 +285,67 @@ const LINKS=[
   {f:48,t:31,n:"Door 1",type:"open"},
   {f:48,t:49,n:"Door 2",type:"open"},{f:49,t:48,n:"Door 2",type:"open"},
   {f:49,t:28,n:"Exit",type:"open"},
+  {f:31,t:28,n:"Door 2",type:"open"},
+  {f:39,t:31,n:"Door 1",type:"open"},{f:40,t:31,n:"Door 1",type:"open"},
 ];
 
 const ITEMS={
-  1:[{n:"Mace",i:"🪓",d:"Break marble monolith → reveals Trébol"},{n:"Cherry Cake",i:"🎂",d:"Feed bat Crunch. Protects in Esophagus."},{n:"Oak Tree",i:"🌳",d:"Carved: 'Magic words to open door are obvious.'"}],
-  2:[{n:"Portrait",i:"🖼️",d:"Hitchcock. Hints the 39 steps answer."}],
-  3:[{n:"Broom",i:"🧹",d:"Give to Witch (R8)"},{n:"Ariadne's Thread",i:"🧵",d:"Give to Spider (R27)"},{n:"Inscription",i:"📜",d:"'Talk to the bat before almost reaching the end.'"}],
-  4:[{n:"Scale",i:"⚖️",d:"Hand-shaped plate for weighing items."}],
-  5:[{n:"Cat Bone",i:"🦴",d:"Break Opaque Mirror → hidden door to R14."}],
-  6:[{n:"Glass of Water",i:"🥛",d:"Give to Trébol (R2)"},{n:"Candelabra",i:"🕯️",d:"MUST carry to survive Witch's Showcase fall."}],
-  7:[{n:"Torch",i:"🔥",d:"Pass Secret Door (R27). Kill Brain Center (R22)."}],
-  8:[{n:"Magic Powder",i:"✨",d:"Give to Troll (R12) before killing it."},{n:"Growing Potion",i:"⚗️",d:"Give to Homunculus (R10)."}],
-  9:[{n:"Bandages",i:"🩹",d:"Give to Daedalus (R28)."},{n:"Engraving",i:"🗿",d:"Shows you talking with a girl."}],
-  10:[{n:"Philosopher's Stone",i:"💎",d:"Give to Mouse (R23)."},{n:"Time Machine",i:"⏱️",d:"Give to Dancer (R25)."}],
-  11:[{n:"Sword",i:"⚔️",d:"Kill: Harpy, Lung Center, Minotaur."},{n:"Lance",i:"🏹",d:"Give to Athena (R4)."},{n:"Bow",i:"🏹",d:"Odysseus's bow."},{n:"Dagger",i:"🗡️",d:"Kill: Heart Center (R21)."},{n:"Battering Ram",i:"🪵",d:"Break Lonely Wall (R1) → secret door."},{n:"Whip",i:"〰️",d:"Kill: Wolf (R24), Stomach Center (R20)."}],
-  12:[{n:"Rose",i:"🌹",d:"Give to Maiden (R14)."},{n:"Mirror",i:"🪞",d:"Shows handing powder to Troll."},{n:"Inscription",i:"📜",d:"'Kill the Troll!'"}],
-  14:[{n:"Painting",i:"🖼️",d:"Break Satan Statue (R27) → hidden door."},{n:"Unicorn Heart",i:"💜",d:"Protects in Main Artery → Heart (R21)."}],
-  15:[{n:"Coffee Cup",i:"☕",d:"Give to Skeleton (R16)."},{n:"Cigarette",i:"🚬",d:"Give to Bronze Knocker (R1)."}],
-  16:[{n:"Umbrella",i:"☂️",d:"Give to Hermes (R4)."},{n:"Air Talisman",i:"💨",d:"MUST carry to survive Trachea → Lungs (R19)."}],
-  23:[{n:"Axe",i:"🪓",d:"Break Bed (R9) → door to Armory (R11)."}],
-  27:[{n:"Hammer",i:"🔨",d:"Break Wooden Door in R28 → path to R50."}],
-  29:[{n:"7 Torches",i:"🔥",d:"6 lit + 1 extinguished. 'Divine number' = Torch 3."}],
-  50:[{n:"Inscription",i:"📜",d:"⚠️ This is NOT the real Garden!"}],
+  1:[{n:"Mace",i:"\ud83e\ude93",d:"Break marble monolith - reveals Trebol"},{n:"Cherry Cake",i:"\ud83c\udf82",d:"Protects in Esophagus (R18-R20). DO NOT give to bat!"},{n:"Oak Tree",i:"\ud83c\udf33",d:"Carved: Magic words to open door are obvious."}],
+  2:[{n:"Portrait",i:"\ud83d\uddbc\ufe0f",d:"Hitchcock. Hints the 39 steps answer."}],
+  3:[{n:"Broom",i:"\ud83e\uddf9",d:"Give to Witch (R8)"},{n:"Ariadne's Thread",i:"\ud83e\uddf5",d:"Give to Spider (R27)"},{n:"Inscription",i:"\ud83d\udcdc",d:"Talk to the bat before almost reaching the end."}],
+  4:[{n:"Scale",i:"\u2696\ufe0f",d:"Hand-shaped plate for weighing items."}],
+  5:[{n:"Cat Bone",i:"\ud83e\uddb4",d:"Break Opaque Mirror - hidden door to R14."}],
+  6:[{n:"Glass of Water",i:"\ud83e\udd5b",d:"Give to Trebol (R2)"},{n:"Candelabra",i:"\ud83d\udd6f\ufe0f",d:"MUST carry to survive Witch Showcase fall."}],
+  7:[{n:"Torch",i:"\ud83d\udd25",d:"Pass Secret Door (R27). Kill Brain Center (R22)."}],
+  8:[{n:"Magic Powder",i:"\u2728",d:"Give to Troll (R12) before killing it."},{n:"Growing Potion",i:"\u2697\ufe0f",d:"Give to Homunculus (R10)."}],
+  9:[{n:"Bandages",i:"\ud83e\ude79",d:"Give to Daedalus (R28)."},{n:"Engraving",i:"\ud83d\uddff",d:"Shows you talking with a girl."}],
+  10:[{n:"Philosopher's Stone",i:"\ud83d\udc8e",d:"Give to Mouse (R23)."},{n:"Time Machine",i:"\u23f1\ufe0f",d:"Give to Dancer (R25)."}],
+  11:[{n:"Sword",i:"\u2694\ufe0f",d:"Kill: Harpy, Lung Center, Minotaur."},{n:"Lance",i:"\ud83c\udff9",d:"Give to Athena (R4)."},{n:"Bow",i:"\ud83c\udff9",d:"Odysseus's bow."},{n:"Dagger",i:"\ud83d\udde1\ufe0f",d:"Kill: Heart Center (R21)."},{n:"Battering Ram",i:"\ud83e\udeb5",d:"Break Lonely Wall (R1) - secret door."},{n:"Whip",i:"\u301c\ufe0f",d:"Kill: Wolf (R24), Stomach Center (R20)."}],
+  12:[{n:"Rose",i:"\ud83c\udf39",d:"Give to Maiden (R14)."},{n:"Mirror",i:"\ud83e\ude9e",d:"Shows handing powder to Troll."},{n:"Inscription",i:"\ud83d\udcdc",d:"Kill the Troll!"}],
+  14:[{n:"Painting",i:"\ud83d\uddbc\ufe0f",d:"Break Satan Statue (R27) - hidden door."},{n:"Unicorn Heart",i:"\ud83d\udc9c",d:"Protects in Main Artery - Heart (R21)."}],
+  15:[{n:"Coffee Cup",i:"\u2615",d:"Give to Skeleton (R16)."},{n:"Cigarette",i:"\ud83d\udeac",d:"Give to Bronze Knocker (R1)."}],
+  16:[{n:"Umbrella",i:"\u2602\ufe0f",d:"Give to Hermes (R4)."},{n:"Air Talisman",i:"\ud83d\udca8",d:"MUST carry to survive Trachea - Lungs (R19)."}],
+  23:[{n:"Axe",i:"\ud83e\ude93",d:"Break Bed (R9) - door to Armory (R11)."}],
+  27:[{n:"Hammer",i:"\ud83d\udd28",d:"Break Wooden Door in R28 - path to R50."}],
+  29:[{n:"7 Torches",i:"\ud83d\udd25",d:"6 lit + 1 extinguished. Divine number = Torch 3."}],
+  50:[{n:"Inscription",i:"\ud83d\udcdc",d:"This is NOT the real Garden!"}],
 };
 const NPCS={
-  1:[{n:"Bronze Knocker",i:"🔔",t:"npc",w:"Cigarette",h:"Gives name: Rumpelstinskin"}],
-  2:[{n:"Trébol (Elf)",i:"🧝",t:"npc",w:"Glass of Water",h:"Find maiden near mirror you break with a bone.",hid:true}],
-  4:[{n:"Athena Statue",i:"🏛️",t:"npc",w:"Lance",h:"To reach lungs, have the air talisman."},{n:"Hermes Statue",i:"🏺",t:"npc",w:"Umbrella",h:"A book in the library leads to the garden."}],
-  6:[{n:"Cyclops",i:"🗿",t:"enemy",wp:"Mace",h:"Reveals password: 'Nombus Rostomelaris'"}],
-  8:[{n:"Witch",i:"🧙",t:"npc",w:"Broom",h:"When they say 'Forbidden', invoke the light."}],
-  10:[{n:"Homunculus",i:"🧪",t:"npc",w:"Growing Potion",h:"Carry candelabra through Witch's Showcase."}],
-  12:[{n:"Troll ⭐WIN#1",i:"👹",t:"enemy",wp:"Any weapon",h:"Give Magic Powder first (hint), then kill with any weapon."}],
-  14:[{n:"Maiden",i:"👸",t:"npc",w:"Rose",h:"The last room is at the beginning."}],
-  15:[{n:"Harpy",i:"🦅",t:"enemy",wp:"Sword",h:"With this sword you will kill the lungs!"}],
-  16:[{n:"Skeleton",i:"💀",t:"npc",w:"Coffee Cup",h:"When entering stomach, take a cake."}],
-  19:[{n:"Lung Center ⭐WIN#2",i:"🫁",t:"enemy",wp:"Sword",h:"Destroyed with Sword."}],
-  20:[{n:"Stomach Center ⭐WIN#3",i:"💛",t:"enemy",wp:"Whip",h:"Destroyed with Whip."}],
-  21:[{n:"Heart Center ⭐WIN#4",i:"❤️",t:"enemy",wp:"Dagger",h:"Only fire destroys the brain."}],
-  22:[{n:"Brain Center ⭐WIN#5",i:"🧠",t:"enemy",wp:"Torch",h:"VICTORY!"}],
-  23:[{n:"Mouse",i:"🐭",t:"npc",w:"Philosopher's Stone",h:"Beware of tunnel and cloth door."}],
-  24:[{n:"Wolf",i:"🐺",t:"enemy",wp:"Whip",h:"Reveals password: 'Agua'"}],
-  25:[{n:"Dancer",i:"💃",t:"npc",w:"Time Machine",h:"Only with a dagger can you kill the heart."}],
-  27:[{n:"Spider",i:"🕷️",t:"npc",w:"Ariadne's Thread",h:"Find the Minotaur and kill with sword."}],
-  28:[{n:"Crunch (Bat)",i:"🦇",t:"npc",w:"Cherry Cake",h:"The 12 will guide you in the Labyrinth."},{n:"Daedalus",i:"👴",t:"npc",w:"Bandages",h:"Only iron will protect you against the flowers."}],
-  29:[{n:"Minotaur ⭐",i:"🐂",t:"enemy",wp:"Sword",h:"Take Torch 3, break Crystal Column in R28."}],
+  1:[{n:"Bronze Knocker",i:"\ud83d\udd14",t:"npc",w:"Cigarette",h:"Gives name: Rumpelstinskin"}],
+  2:[{n:"Trebol (Elf)",i:"\ud83e\udddd",t:"npc",w:"Glass of Water",h:"Find maiden near mirror you break with a bone.",hid:true}],
+  4:[{n:"Athena Statue",i:"\ud83c\udfdb\ufe0f",t:"npc",w:"Lance",h:"To reach lungs, have the air talisman."},{n:"Hermes Statue",i:"\ud83c\udffa",t:"npc",w:"Umbrella",h:"A book in the library leads to the garden."}],
+  6:[{n:"Cyclops",i:"\ud83d\uddff",t:"enemy",wp:"Mace",h:"Reveals password: Nombus Rostomelaris"}],
+  8:[{n:"Witch",i:"\ud83e\uddd9",t:"npc",w:"Broom",h:"When they say Forbidden, invoke the light."}],
+  10:[{n:"Homunculus",i:"\ud83e\uddea",t:"npc",w:"Growing Potion",h:"Carry candelabra through Witch Showcase."}],
+  12:[{n:"Troll WIN#1",i:"\ud83d\udc79",t:"enemy",wp:"Any weapon",h:"Give Magic Powder first (hint), then kill with any weapon."}],
+  14:[{n:"Maiden",i:"\ud83d\udc78",t:"npc",w:"Rose",h:"The last room is at the beginning."}],
+  15:[{n:"Harpy",i:"\ud83e\udd85",t:"enemy",wp:"Sword",h:"With this sword you will kill the lungs!"}],
+  16:[{n:"Skeleton",i:"\ud83d\udC80",t:"npc",w:"Coffee Cup",h:"When entering stomach, take a cake."}],
+  19:[{n:"Lung Center WIN#2",i:"\ud83e\udec1",t:"enemy",wp:"Sword",h:"Destroyed with Sword."}],
+  20:[{n:"Stomach Center WIN#3",i:"\ud83d\udc9b",t:"enemy",wp:"Whip",h:"Destroyed with Whip."}],
+  21:[{n:"Heart Center WIN#4",i:"\u2764\ufe0f",t:"enemy",wp:"Dagger",h:"Only fire destroys the brain."}],
+  22:[{n:"Brain Center WIN#5",i:"\ud83e\udde0",t:"enemy",wp:"Torch",h:"VICTORY!"}],
+  23:[{n:"Mouse",i:"\ud83d\udc2d",t:"npc",w:"Philosopher's Stone",h:"Beware of tunnel and cloth door."}],
+  24:[{n:"Wolf",i:"\ud83d\udc3a",t:"enemy",wp:"Whip",h:"Reveals password: Agua"}],
+  25:[{n:"Dancer",i:"\ud83d\udc83",t:"npc",w:"Time Machine",h:"Only with a dagger can you kill the heart."}],
+  27:[{n:"Spider",i:"\ud83d\udd77\ufe0f",t:"npc",w:"Ariadne's Thread",h:"Find the Minotaur and kill with sword."}],
+  28:[{n:"Crunch (Bat)",i:"\ud83e\udd87",t:"npc",w:"Cherry Cake",h:"The 12 will guide you in the Labyrinth."},{n:"Daedalus",i:"\ud83d\udc74",t:"npc",w:"Bandages",h:"Only iron will protect you against the flowers."}],
+  29:[{n:"Minotaur",i:"\ud83d\udc02",t:"enemy",wp:"Sword",h:"Take Torch 3, break Crystal Column in R28."}],
 };
 const HIDDEN_OBJ={
-  1:[{n:"Lonely Wall",i:"🧱",tool:"Battering Ram",rev:"Secret Door → R27"}],
-  2:[{n:"Marble Monolith",i:"⬛",tool:"Mace",rev:"Trébol the Elf (NPC)"}],
-  5:[{n:"Opaque Mirror",i:"🪞",tool:"Cat Bone",rev:"Hidden Door → R14"}],
-  9:[{n:"Bed",i:"🛏️",tool:"Axe",rev:"Door → Armory (R11)"}],
-  27:[{n:"Satan Statue",i:"😈",tool:"Painting",rev:"Hidden Door → R28"}],
-  28:[{n:"Crystal Column",i:"💎",tool:"Torch 3",rev:"Wooden Door (break w/ Hammer → R50)"}],
+  1:[{n:"Lonely Wall",i:"\ud83e\uddf1",tool:"Battering Ram",rev:"Secret Door - R27"}],
+  2:[{n:"Marble Monolith",i:"\u2b1b",tool:"Mace",rev:"Trebol the Elf (NPC)"}],
+  5:[{n:"Opaque Mirror",i:"\ud83e\ude9e",tool:"Cat Bone",rev:"Hidden Door - R14"}],
+  9:[{n:"Bed",i:"\ud83d\udecf\ufe0f",tool:"Axe",rev:"Door - Armory (R11)"}],
+  27:[{n:"Satan Statue",i:"\ud83d\ude08",tool:"Painting",rev:"Hidden Door - R28"}],
+  28:[{n:"Crystal Column",i:"\ud83d\udc8e",tool:"Torch 3",rev:"Wooden Door (break w/ Hammer - R50)"}],
 };
 const ROOM_DESC={
   1:"Walls are very black, no windows. Clouds hide the tops of the towers.",
   2:"Made for creatures much larger than humans. Deserted, but you feel watched.",
   3:"Twelve tables. Each one has twelve hedgehogs.",
   4:"Snail-shaped courtyard. Black marble columns. Dry leaves crunch underfoot.",
-  5:"So many mirrors — you cannot tell if you are real, or an image.",
+  5:"So many mirrors - you cannot tell if you are real, or an image.",
   6:"Thousands of books, all with a page marked by a napkin.",
   7:"Three doors on the side, and one at the end.",
   8:"A witch clearly lives here. The window was invisible from outside.",
@@ -347,7 +358,7 @@ const ROOM_DESC={
   15:"Tables scattered on the floor. No human has been here before.",
   16:"So humid you would not last even hours.",
   17:"Like a human mouth, but the size of a house.",
-  18:"You feel the heartbeats, breathing, stomach liquids... ⚠️ DO NOT continue without protection!",
+  18:"You feel the heartbeats, breathing, stomach liquids... DO NOT continue without protection!",
   19:"The air is so strong you have thrown yourself to the ground.",
   20:"There are several human skeletons.",
   21:"Everything pulsates rhythmically.",
@@ -355,80 +366,214 @@ const ROOM_DESC={
   23:"Full of human meat.",
   24:"Little vegetation. The ground is swampy.",
   25:"Like a giant kaleidoscope. The walls change color.",
-  26:"⚠️ DEATH TRAP — No way to escape.",
+  26:"DEATH TRAP - No way to escape.",
   27:"It is very long and narrow.",
   28:"Comfortable, but there is evil floating in the air.",
-  29:"Seven torches. (6 lit, 1 extinguished — Torch 6)",
+  29:"Seven torches. (6 lit, 1 extinguished - Torch 3 is the divine number)",
   30:"Few people have reached this hall. The brain is behind the door.",
-  50:"⚠️ WARNING: This is NOT the real Garden! Almost all doors lead to death cell (R26).",
+  50:"WARNING: This is NOT the real Garden! Almost all doors lead to death cell (R26).",
 };
 
 // ═══════════════════════════════════════════════════════
-// DEFAULT POSITIONS (can be dragged and saved)
+// DEDUPLICATE LINKS INTO EDGES
 // ═══════════════════════════════════════════════════════
-const W=116, H=72;
-// Layout zones: Entrance(top-left) → Hallway(top-center) → Garden hub(center)
-//   → Outer/Beast path(right) | Secret path(left column) | Labyrinth(bottom)
-const DEFAULT_POS={
-  // ENTRANCE ZONE
-  1:{x:60,  y:70},   2:{x:230, y:70},   3:{x:400, y:70},
-  4:{x:230, y:210},  5:{x:400, y:210},
+var EDGES = [];
+(function dedup() {
+  var used = [];
+  for (var i = 0; i < LINKS.length; i++) used.push(false);
 
-  // LIBRARY → HALLWAY (same row as entrance, extending right)
-  6:{x:570, y:70},   7:{x:740, y:70},
-  8:{x:910, y:70},   // Witch bedroom (right of hallway, for short R8↔R14 path)
-  9:{x:740, y:210},  // Warrior (below hallway)
-  10:{x:910, y:210}, 11:{x:910, y:350}, // Lab + Armory (column)
+  for (var i = 0; i < LINKS.length; i++) {
+    if (used[i]) continue;
+    var a = LINKS[i];
+    var rev = -1;
+    for (var j = i + 1; j < LINKS.length; j++) {
+      if (used[j]) continue;
+      var b = LINKS[j];
+      if (b.f === a.t && b.t === a.f && b.type === a.type && b.n === a.n) {
+        rev = j;
+        break;
+      }
+    }
+    if (rev >= 0) {
+      used[i] = used[rev] = true;
+      EDGES.push({f:a.f, t:a.t, n:a.n, type:a.type, pw:a.pw, ans:a.ans, need:a.need, tool:a.tool, bidir:true});
+    } else {
+      used[i] = true;
+      EDGES.push({f:a.f, t:a.t, n:a.n, type:a.type, pw:a.pw, ans:a.ans, need:a.need, tool:a.tool, bidir:false});
+    }
+  }
 
-  // GARDEN HUB (center-left, accessible from R6 book and R15)
-  12:{x:570, y:350}, // Baths (above garden)
-  13:{x:570, y:490}, // Garden hub
-  14:{x:1080,y:70},  // Maiden bedroom (right of witch, short R8→R14 line)
-  15:{x:740, y:350}, // Infusion (between warrior and garden)
-  16:{x:400, y:490}, // Dungeons (left of garden)
+  // Compute curve offsets for multiple edges between same room pair
+  var pairEdges = {};
+  for (var i = 0; i < EDGES.length; i++) {
+    var e = EDGES[i];
+    var key = Math.min(e.f, e.t) + '-' + Math.max(e.f, e.t);
+    if (!pairEdges[key]) pairEdges[key] = [];
+    pairEdges[key].push(i);
+  }
+  for (var key in pairEdges) {
+    var indices = pairEdges[key];
+    var total = indices.length;
+    for (var idx = 0; idx < indices.length; idx++) {
+      EDGES[indices[idx]]._pairTotal = total;
+      EDGES[indices[idx]]._pairIndex = idx;
+    }
+  }
+})();
 
-  // OUTER → BEAST PATH (right half, garden row extending right)
-  23:{x:740, y:490}, // Storerooms
-  24:{x:910, y:490}, // Wasteland
-  25:{x:1080,y:490}, // Crystal Hall
-  17:{x:1250,y:490}, // Mouth of Beast
-  18:{x:1250,y:350}, // Inside Beast
-  19:{x:1420,y:210}, // Lungs
-  20:{x:1420,y:350}, // Stomach
-  21:{x:1420,y:490}, // Heart
+// ═══════════════════════════════════════════════════════
+// POSITIONS (with localStorage persistence)
+// ═══════════════════════════════════════════════════════
+var W=116, H=72;
+var STORAGE_KEY = 'fortaleza_map_positions';
 
-  // SECRET PATH (left column, straight down from R1)
-  27:{x:60,  y:350}, // Marble Bridge
-  28:{x:60,  y:490}, // Lab Antechamber
-  50:{x:60,  y:630}, // Fake Garden
-  30:{x:230, y:630}, // Hall of Chosen
-  22:{x:230, y:770}, // Brain (reachable only from R30)
-  26:{x:400, y:630}, // Death trap (isolated)
+// Compute planar layout using Tutte's barycentric embedding (main area)
+// with grid layout for labyrinth. Guarantees zero crossings for the
+// planar main-area subgraph via convex outer-face + barycenter theorem.
+var DEFAULT_POS=(function(){
+  // Build undirected adjacency from deduplicated edges
+  var A={},ids=Object.keys(ROOMS),i,j,e,k,id;
+  for(i=0;i<ids.length;i++)A[+ids[i]]=[];
+  var ES={};
+  for(i=0;i<EDGES.length;i++){
+    e=EDGES[i];k=Math.min(e.f,e.t)+'_'+Math.max(e.f,e.t);
+    if(!ES[k]){ES[k]=1;if(A[e.f].indexOf(e.t)<0)A[e.f].push(e.t);if(A[e.t].indexOf(e.f)<0)A[e.t].push(e.f);}
+  }
+  var R={};
 
-  // LABYRINTH (bottom section)
-  49:{x:60,  y:770}, // Labyrinth exit → R28
-  31:{x:230, y:910}, 32:{x:400, y:910}, 33:{x:570, y:910},
-  34:{x:740, y:910}, 35:{x:910, y:910}, 36:{x:1080,y:910},
-  37:{x:1250,y:910}, 29:{x:1420,y:910}, // Minotaur (R37→R29)
-  38:{x:400, y:1050},39:{x:570, y:1050},40:{x:740, y:1050},
-  41:{x:740, y:1190},42:{x:570, y:1190},43:{x:400, y:1190},
-  44:{x:230, y:1190},45:{x:230, y:1050},
-  46:{x:910, y:1050},47:{x:910, y:1190}, // R29→R47
-  48:{x:1080,y:1190},
-};
+  // === MAIN AREA: Tutte embedding ===
+  // Outer face = main game cycle (verified planar partition)
+  var OF=[1,4,6,13,23,24];
+  var OP={1:{x:600,y:50},4:{x:1100,y:120},6:{x:1250,y:440},
+          13:{x:750,y:820},23:{x:220,y:640},24:{x:170,y:270}};
+  var OS={};
+  for(i=0;i<OF.length;i++){OS[OF[i]]=1;R[OF[i]]={x:OP[OF[i]].x,y:OP[OF[i]].y};}
 
-// Live positions (copy of defaults, mutated on drag)
-const pos={};
-function resetPositions(){ for(const id in DEFAULT_POS) pos[id]={...DEFAULT_POS[id]}; }
+  // Interior rooms of the main cycle
+  var IN=[2,3,5,7,8,9,10,11,12,14,15,16],IS={},MA={};
+  for(i=0;i<IN.length;i++)IS[IN[i]]=1;
+  // Build main-area-only adjacency (exclude labyrinth and exterior chains)
+  for(i=0;i<IN.length;i++){
+    id=IN[i];MA[id]=[];
+    var nb=A[id]||[];
+    for(j=0;j<nb.length;j++)if(OS[nb[j]]||IS[nb[j]])MA[id].push(nb[j]);
+  }
+
+  // Initialize interior at centroid of outer face
+  var cx=0,cy=0;
+  for(i=0;i<OF.length;i++){cx+=R[OF[i]].x;cy+=R[OF[i]].y;}
+  cx/=OF.length;cy/=OF.length;
+  for(i=0;i<IN.length;i++)R[IN[i]]={x:cx,y:cy};
+
+  // Phase 1: Pure Tutte iteration (barycentric placement)
+  // Converges to unique solution guaranteed crossing-free inside convex outer face
+  for(var it=0;it<300;it++){
+    for(i=0;i<IN.length;i++){
+      var v=IN[i],vnb=MA[v];if(!vnb.length)continue;
+      var sx=0,sy=0;
+      for(j=0;j<vnb.length;j++){sx+=R[vnb[j]].x;sy+=R[vnb[j]].y;}
+      R[v]={x:sx/vnb.length,y:sy/vnb.length};
+    }
+  }
+
+  // Phase 2: Separate overlapping/degenerate nodes (degree-1 vertices collapse)
+  var MD=120;
+  for(it=0;it<100;it++){
+    var any=false;
+    for(i=0;i<IN.length;i++)for(j=i+1;j<IN.length;j++){
+      var a=IN[i],b=IN[j],dx=R[b].x-R[a].x,dy=R[b].y-R[a].y,d=Math.sqrt(dx*dx+dy*dy);
+      if(d<MD){any=true;var p=(MD-d)/2*0.3,nx=d>0.1?dx/d:((i+j)%2?1:-1),ny=d>0.1?dy/d:((i-j)%2?1:-1);
+        R[a].x-=nx*p;R[a].y-=ny*p;R[b].x+=nx*p;R[b].y+=ny*p;}
+    }
+    if(!any)break;
+  }
+
+  // === EXTERIOR CHAINS (extend outward from cycle boundary) ===
+  // Secret path: 1 -> 27 -> 28 -> 50 -> 30 -> 22
+  R[27]={x:R[1].x-200,y:R[1].y+90};
+  R[28]={x:R[27].x-130,y:R[27].y+150};
+  R[50]={x:R[28].x-80,y:R[28].y+150};
+  R[30]={x:R[50].x-30,y:R[50].y+150};
+  R[22]={x:R[30].x,y:R[30].y+150};
+  // Beast path: 24 -> 25 -> 17 -> 18 -> (19,20,21)
+  R[25]={x:R[24].x-20,y:R[24].y+180};
+  R[17]={x:R[25].x,y:R[25].y+170};
+  R[18]={x:R[17].x+200,y:R[17].y+100};
+  R[19]={x:R[18].x-140,y:R[18].y+140};
+  R[20]={x:R[18].x+10,y:R[18].y+140};
+  R[21]={x:R[18].x+160,y:R[18].y+140};
+  // Death cell
+  R[26]={x:Math.min(R[22].x,R[25].x)-60,y:Math.max(R[22].y,R[25].y)+80};
+
+  // === LABYRINTH (grid layout below main area) ===
+  var labY=0;
+  for(id in R){var yb=R[id].y+72;if(yb>labY)labY=yb;}
+  labY+=120;
+  var lx=220,ldx=170,ldy=170;
+  // Forward path (correct route: 31->32->33->34->35->36->37->29)
+  var fw=[31,32,33,34,35,36,37];
+  for(i=0;i<fw.length;i++)R[fw[i]]={x:lx+i*ldx,y:labY};
+  R[29]={x:lx+7.3*ldx,y:labY+ldy*0.6};
+  // Inner corridor row
+  R[45]={x:lx,y:labY+ldy};R[44]={x:lx+ldx,y:labY+ldy};
+  R[43]={x:lx+2*ldx,y:labY+ldy};R[42]={x:lx+3*ldx,y:labY+ldy};
+  R[41]={x:lx+4*ldx,y:labY+ldy};R[46]={x:lx+5*ldx,y:labY+ldy};
+  R[47]={x:lx+6*ldx,y:labY+ldy};
+  // Trap corridor + return path row
+  R[38]={x:lx,y:labY+2*ldy};R[39]={x:lx+ldx,y:labY+2*ldy};
+  R[40]={x:lx+2*ldx,y:labY+2*ldy};
+  R[48]={x:lx+6*ldx,y:labY+2*ldy};R[49]={x:lx+5*ldx,y:labY+2*ldy};
+
+  return R;
+})();
+
+var pos={};
+
+function resetPositions() {
+  for (var id in DEFAULT_POS) pos[id] = {x: DEFAULT_POS[id].x, y: DEFAULT_POS[id].y};
+}
+
+function loadPositions() {
+  try {
+    var saved = localStorage.getItem(STORAGE_KEY);
+    if (saved) {
+      var data = JSON.parse(saved);
+      var valid = true;
+      for (var id in DEFAULT_POS) {
+        if (!data[id] || typeof data[id].x !== 'number') { valid = false; break; }
+      }
+      if (valid) {
+        for (var id in data) {
+          if (DEFAULT_POS[id]) pos[id] = {x: data[id].x, y: data[id].y};
+        }
+        return true;
+      }
+    }
+  } catch(e) {}
+  return false;
+}
+
+function savePositions() {
+  try { localStorage.setItem(STORAGE_KEY, JSON.stringify(pos)); } catch(e) {}
+}
+
+function showSaveToast() {
+  var t = document.getElementById('save-toast');
+  t.classList.add('show');
+  clearTimeout(t._timer);
+  t._timer = setTimeout(function() { t.classList.remove('show'); }, 1200);
+}
+
 resetPositions();
+loadPositions();
 
 // ═══════════════════════════════════════════════════════
 // SVG
 // ═══════════════════════════════════════════════════════
-const NS='http://www.w3.org/2000/svg';
-const svgEl=document.getElementById('connsvg');
+var NS='http://www.w3.org/2000/svg';
+var svgEl=document.getElementById('connsvg');
 
-const TSTYLE={
+var TSTYLE={
   open:  {stroke:'#3a6a2a',dash:'none',w:1.8,arr:'open'},
   locked:{stroke:'#8a5010',dash:'5 3', w:1.8,arr:'locked'},
   riddle:{stroke:'#5050b0',dash:'6 3', w:1.8,arr:'riddle'},
@@ -437,82 +582,72 @@ const TSTYLE={
 };
 
 function buildArrows(){
-  let d=svgEl.querySelector('defs');
+  var d=svgEl.querySelector('defs');
   if(!d){d=document.createElementNS(NS,'defs');svgEl.insertBefore(d,svgEl.firstChild);}
-  d.innerHTML='';
-  [['open','#3a6a2a'],['locked','#8a5010'],['riddle','#5050b0'],['danger','#9b2020'],['hidden','#7a3aaa']].forEach(([k,c])=>{
-    const m=document.createElementNS(NS,'marker');
-    m.setAttribute('id','arr-'+k);m.setAttribute('markerWidth','7');m.setAttribute('markerHeight','7');
+  d.textContent='';
+  var arrows=[['open','#3a6a2a'],['locked','#8a5010'],['riddle','#5050b0'],['danger','#9b2020'],['hidden','#7a3aaa']];
+  for(var k=0;k<arrows.length;k++){
+    var m=document.createElementNS(NS,'marker');
+    m.setAttribute('id','arr-'+arrows[k][0]);m.setAttribute('markerWidth','7');m.setAttribute('markerHeight','7');
     m.setAttribute('refX','6');m.setAttribute('refY','3.5');m.setAttribute('orient','auto');
-    const p=document.createElementNS(NS,'path');p.setAttribute('d','M0,0 L0,7 L7,3.5 z');p.setAttribute('fill',c);
+    var p=document.createElementNS(NS,'path');p.setAttribute('d','M0,0 L0,7 L7,3.5 z');p.setAttribute('fill',arrows[k][1]);
     m.appendChild(p);d.appendChild(m);
-  });
+  }
 }
 
-const linkEls={};
+var edgeEls=[];
 
-function cx(id){const p=pos[id];return p?p.x+W/2:null;}
-function cy(id){const p=pos[id];return p?p.y+H/2:null;}
+function cx(id){var p=pos[id];return p?p.x+W/2:null;}
+function cy(id){var p=pos[id];return p?p.y+H/2:null;}
 
-// Pre-build bidirectional pair set: key = "minId-maxId"
-function buildBidiSet(){
-  const s=new Set();
-  LINKS.forEach(lk=>{
-    if(LINKS.some(l=>l.f===lk.t&&l.t===lk.f))
-      s.add(`${Math.min(lk.f,lk.t)}-${Math.max(lk.f,lk.t)}`);
-  });
-  return s;
-}
-const BIDI=buildBidiSet();
+function initSVGEdges(){
+  var children = svgEl.childNodes;
+  for(var i=children.length-1;i>=0;i--){
+    if(children[i].tagName!=='defs') svgEl.removeChild(children[i]);
+  }
+  edgeEls=[];
 
-function initSVGLinks(){
-  [...svgEl.children].forEach(c=>{if(c.tagName!=='defs')svgEl.removeChild(c);});
+  for(var i=0;i<EDGES.length;i++){
+    var edge=EDGES[i];
+    var st=TSTYLE[edge.type]||TSTYLE.open;
+    var label=edge.pw?(edge.n+' \ud83d\udd12'):edge.ans?(edge.n+' \u2753'):edge.need?(edge.n+' \u26a0\ufe0f'):edge.tool?(edge.n+' \ud83d\udd0d'):edge.n;
+    var aw=label.length*5+12;
 
-  LINKS.forEach((lk,i)=>{
-    const st=TSTYLE[lk.type]||TSTYLE.open;
-    const label=lk.pw?`${lk.n} 🔒`:lk.ans?`${lk.n} ❓`:lk.need?`${lk.n} ⚠️`:lk.tool?`${lk.n} 🔍`:lk.n;
-    const aw=label.length*5+12;
-    const pairKey=`${Math.min(lk.f,lk.t)}-${Math.max(lk.f,lk.t)}`;
-    const isBidi=BIDI.has(pairKey);
-    // forward = lower room ID is the source
-    const isForward=lk.f<lk.t;
-    // curve direction: bidi pairs curve apart; same-pair duplicates offset
-    const curveDir=isBidi?(isForward?1:-1):0;
+    var curveOff=0;
+    if(edge._pairTotal>1){
+      var spread=22;
+      curveOff=(edge._pairIndex-(edge._pairTotal-1)/2)*spread;
+    }
 
-    const g=document.createElementNS(NS,'g');
+    var g=document.createElementNS(NS,'g');
     g.setAttribute('class','lk-g');
-    g.dataset.f=lk.f; g.dataset.t=lk.t;
-    g.dataset.aw=aw; g.dataset.curve=curveDir;
-    g.dataset.stroke=st.stroke; g.dataset.arr=st.arr;
-    g.dataset.w=st.w; g.dataset.dash=st.dash;
+    g.dataset.f=edge.f; g.dataset.t=edge.t;
+    g.dataset.aw=aw; g.dataset.curve=curveOff;
+    g.dataset.bidir=edge.bidir?'1':'0';
 
-    // Bezier path for the line
-    const path=document.createElementNS(NS,'path');
+    var path=document.createElementNS(NS,'path');
     path.setAttribute('stroke',st.stroke);
     path.setAttribute('stroke-width',st.w);
     path.setAttribute('fill','none');
     if(st.dash!=='none')path.setAttribute('stroke-dasharray',st.dash);
-    path.setAttribute('marker-end','url(#arr-'+st.arr+')');
+    if(!edge.bidir) path.setAttribute('marker-end','url(#arr-'+st.arr+')');
     g.appendChild(path);
 
-    // Wider invisible hit area for hover
-    const hit=document.createElementNS(NS,'path');
+    var hit=document.createElementNS(NS,'path');
     hit.setAttribute('stroke','transparent');
     hit.setAttribute('stroke-width','12');
     hit.setAttribute('fill','none');
     g.appendChild(hit);
 
-    // Label background rect (hidden by default via CSS)
-    const bg=document.createElementNS(NS,'rect');
+    var bg=document.createElementNS(NS,'rect');
     bg.setAttribute('class','lk-bg');
     bg.setAttribute('width',aw); bg.setAttribute('height',14);
     bg.setAttribute('rx','2'); bg.setAttribute('fill','rgba(5,3,1,0.92)');
     bg.setAttribute('stroke',st.stroke); bg.setAttribute('stroke-width','0.5');
     g.appendChild(bg);
 
-    // Label text (hidden by default via CSS)
-    const tc=st.stroke==='#3a6a2a'?'#5aaa4a':st.stroke==='#9b2020'?'#e06060':st.stroke==='#5050b0'?'#8888ee':st.stroke==='#8a5010'?'#d07030':'#c080f0';
-    const txt=document.createElementNS(NS,'text');
+    var tc=st.stroke==='#3a6a2a'?'#5aaa4a':st.stroke==='#9b2020'?'#e06060':st.stroke==='#5050b0'?'#8888ee':st.stroke==='#8a5010'?'#d07030':'#c080f0';
+    var txt=document.createElementNS(NS,'text');
     txt.setAttribute('class','lk-txt');
     txt.setAttribute('text-anchor','middle');
     txt.setAttribute('font-size','7.5'); txt.setAttribute('font-family','Cinzel,serif');
@@ -521,44 +656,42 @@ function initSVGLinks(){
     g.appendChild(txt);
 
     svgEl.appendChild(g);
-    linkEls[i]=g;
-  });
+    edgeEls.push(g);
+  }
 }
 
-function updateLinkPositions(){
-  for(let i=0;i<LINKS.length;i++){
-    const g=linkEls[i]; if(!g) continue;
-    const f=+g.dataset.f, t=+g.dataset.t;
-    const x1=cx(f), y1=cy(f), x2=cx(t), y2=cy(t);
+function updateEdgePositions(){
+  for(var i=0;i<EDGES.length;i++){
+    var g=edgeEls[i]; if(!g) continue;
+    var f=+g.dataset.f, t=+g.dataset.t;
+    var x1=cx(f), y1=cy(f), x2=cx(t), y2=cy(t);
     if(x1===null||x2===null||f===t) continue;
 
-    const aw=+g.dataset.aw;
-    const curveDir=+g.dataset.curve; // -1, 0, or 1
+    var aw=+g.dataset.aw;
+    var curveOff=+g.dataset.curve;
+    var isBidir=g.dataset.bidir==='1';
 
-    const dx=x2-x1, dy=y2-y1, len=Math.sqrt(dx*dx+dy*dy)||1;
-    // Perpendicular unit vector
-    const nx=-dy/len, ny=dx/len;
-    // Curve offset: 18px for bidi pairs, 0 for one-way
-    const off=curveDir*18;
-    const cpx=(x1+x2)/2+nx*off;
-    const cpy=(y1+y2)/2+ny*off;
+    var dx=x2-x1, dy=y2-y1, len=Math.sqrt(dx*dx+dy*dy)||1;
+    var shrink=isBidir?0:8;
+    var ex2=x2-dx/len*shrink, ey2=y2-dy/len*shrink;
 
-    // Shorten end point to not overlap arrowhead into node center
-    const shrink=8;
-    const ex2=x2-dx/len*shrink, ey2=y2-dy/len*shrink;
-
-    const d=`M${x1.toFixed(1)},${y1.toFixed(1)} Q${cpx.toFixed(1)},${cpy.toFixed(1)} ${ex2.toFixed(1)},${ey2.toFixed(1)}`;
+    // Straight lines for single edges (planar embedding);
+    // quadratic bezier only for parallel edges between same room pair
+    var d,mx,my;
+    if(curveOff===0){
+      d='M'+x1.toFixed(1)+','+y1.toFixed(1)+' L'+ex2.toFixed(1)+','+ey2.toFixed(1);
+      mx=(x1+ex2)/2;my=(y1+ey2)/2;
+    }else{
+      var nx=-dy/len,ny=dx/len;
+      var cpx=(x1+x2)/2+nx*curveOff,cpy=(y1+y2)/2+ny*curveOff;
+      d='M'+x1.toFixed(1)+','+y1.toFixed(1)+' Q'+cpx.toFixed(1)+','+cpy.toFixed(1)+' '+ex2.toFixed(1)+','+ey2.toFixed(1);
+      mx=0.25*x1+0.5*cpx+0.25*x2;my=0.25*y1+0.5*cpy+0.25*y2;
+    }
     g.children[0].setAttribute('d',d);
-    g.children[1].setAttribute('d',d); // hit area same path
+    g.children[1].setAttribute('d',d);
 
-    // Midpoint of quadratic bezier at t=0.5
-    const mx=0.25*x1+0.5*cpx+0.25*x2;
-    const my=0.25*y1+0.5*cpy+0.25*y2;
-
-    // Label: always horizontal, centered on midpoint, 16px above curve midpoint
-    const lox=mx-aw/2, loy=my-off*0.3-18;
+    var lox=mx-aw/2, loy=my-17;
     g.children[2].setAttribute('x',lox); g.children[2].setAttribute('y',loy);
-    // Text baseline: center in rect (rect height=14, so text y = rect.y + 10)
     g.children[3].setAttribute('x',mx); g.children[3].setAttribute('y',loy+10);
   }
 }
@@ -566,105 +699,140 @@ function updateLinkPositions(){
 // ═══════════════════════════════════════════════════════
 // ROOM NODES
 // ═══════════════════════════════════════════════════════
-const world=document.getElementById('world');
-const nodeEls={};
+var world=document.getElementById('world');
+var nodeEls={};
 
 function countRoom(id){
-  const it=(ITEMS[id]||[]).length;
-  const all=NPCS[id]||[];
-  return{it,np:all.filter(n=>n.t==='npc').length,en:all.filter(n=>n.t==='enemy').length,hd:(HIDDEN_OBJ[id]||[]).length};
+  var it=(ITEMS[id]||[]).length;
+  var all=NPCS[id]||[];
+  var np=0,en=0;
+  for(var i=0;i<all.length;i++){if(all[i].t==='npc')np++;if(all[i].t==='enemy')en++;}
+  return{it:it,np:np,en:en,hd:(HIDDEN_OBJ[id]||[]).length};
 }
 
 function buildRooms(){
-  // Remove old nodes
-  Object.values(nodeEls).forEach(el=>el.parentNode&&el.parentNode.removeChild(el));
-  for(const k in nodeEls) delete nodeEls[k];
+  for(var k in nodeEls){var el=nodeEls[k];if(el.parentNode)el.parentNode.removeChild(el);}
+  nodeEls={};
 
-  for(const [ids,room] of Object.entries(ROOMS)){
-    const id=+ids;
-    const p=pos[id]; if(!p) continue;
-    const isLab=room.zone==='labyrinth';
-    const isBoss=[12,19,20,21,22,29].includes(id);
-    const isTrap=[26].includes(id);
+  var roomIds=Object.keys(ROOMS);
+  for(var ri=0;ri<roomIds.length;ri++){
+    var ids=roomIds[ri];
+    var id=+ids;
+    var room=ROOMS[id];
+    var p=pos[id]; if(!p) continue;
+    var isLab=room.zone==='labyrinth';
+    var isBoss=[12,19,20,21,22,29].indexOf(id)>=0;
+    var isTrap=id===26;
 
-    const div=document.createElement('div');
+    var div=document.createElement('div');
     div.className='rnode'+(isBoss?' boss':'')+(isTrap?' trap':'')+(isLab?' lab':'');
     div.style.left=p.x+'px';div.style.top=p.y+'px';
     div.style.width=(isLab?'96px':'116px');
     div.dataset.id=id;
 
-    const c=countRoom(id);
-    let badges='';
-    if(c.it>0) badges+=`<span class="rb rb-item">📦${c.it}</span>`;
-    if(c.np>0) badges+=`<span class="rb rb-npc">👤${c.np}</span>`;
-    if(c.en>0) badges+=`<span class="rb rb-enemy">⚔️${c.en}</span>`;
-    if(c.hd>0) badges+=`<span class="rb rb-hidden">🔍${c.hd}</span>`;
-    div.innerHTML=`<div class="rid">R${id}</div><div class="rname">${room.name}</div>${badges?`<div class="rbadges">${badges}</div>`:''}`;
+    var c=countRoom(id);
+    var badgesArr=[];
+    if(c.it>0) badgesArr.push('<span class="rb rb-item">\ud83d\udce6'+c.it+'</span>');
+    if(c.np>0) badgesArr.push('<span class="rb rb-npc">\ud83d\udc64'+c.np+'</span>');
+    if(c.en>0) badgesArr.push('<span class="rb rb-enemy">\u2694\ufe0f'+c.en+'</span>');
+    if(c.hd>0) badgesArr.push('<span class="rb rb-hidden">\ud83d\udd0d'+c.hd+'</span>');
+
+    var ridEl=document.createElement('div');ridEl.className='rid';ridEl.textContent='R'+id;
+    var rnEl=document.createElement('div');rnEl.className='rname';rnEl.textContent=room.name;
+    div.appendChild(ridEl);
+    div.appendChild(rnEl);
+    if(badgesArr.length>0){
+      var bdiv=document.createElement('div');bdiv.className='rbadges';
+      // badges use known static content from our own data, safe to set
+      for(var bi=0;bi<badgesArr.length;bi++){
+        var span=document.createElement('span');
+        span.className=badgesArr[bi].indexOf('rb-item')>=0?'rb rb-item':badgesArr[bi].indexOf('rb-npc')>=0?'rb rb-npc':badgesArr[bi].indexOf('rb-enemy')>=0?'rb rb-enemy':'rb rb-hidden';
+        var icon=c.it>0&&bi===0?'\ud83d\udce6':c.np>0&&((c.it>0&&bi===1)||(!c.it&&bi===0))?'\ud83d\udc64':c.en>0?'\u2694\ufe0f':'\ud83d\udd0d';
+        // simpler approach: rebuild badges
+        span=null;
+      }
+      // Use a simpler safe approach for badges
+      var counts=[];
+      if(c.it>0)counts.push({cls:'rb rb-item',txt:'\ud83d\udce6'+c.it});
+      if(c.np>0)counts.push({cls:'rb rb-npc',txt:'\ud83d\udc64'+c.np});
+      if(c.en>0)counts.push({cls:'rb rb-enemy',txt:'\u2694\ufe0f'+c.en});
+      if(c.hd>0)counts.push({cls:'rb rb-hidden',txt:'\ud83d\udd0d'+c.hd});
+      for(var ci=0;ci<counts.length;ci++){
+        var s=document.createElement('span');
+        s.className=counts[ci].cls;
+        s.textContent=counts[ci].txt;
+        bdiv.appendChild(s);
+      }
+      div.appendChild(bdiv);
+    }
 
     attachDrag(div,id);
-    div.addEventListener('click',e=>{if(!wasDragged)openPanel(id);});
+    (function(roomId){
+      div.addEventListener('click',function(e){if(!wasDragged)openPanel(roomId);});
+    })(id);
     world.appendChild(div);
     nodeEls[id]=div;
   }
 }
 
 // ═══════════════════════════════════════════════════════
-// ROOM DRAGGING
+// ROOM DRAGGING (with auto-save)
 // ═══════════════════════════════════════════════════════
-let wasDragged=false;
+var wasDragged=false;
 
 function attachDrag(el,id){
-  el.addEventListener('mousedown',e=>{
+  el.addEventListener('mousedown',function(e){
     if(e.button!==0) return;
     e.stopPropagation();
     e.preventDefault();
     wasDragged=false;
-    const startX=e.clientX/scale,startY=e.clientY/scale;
-    const startPX=pos[id].x,startPY=pos[id].y;
+    var startX=e.clientX/scale,startY=e.clientY/scale;
+    var startPX=pos[id].x,startPY=pos[id].y;
     el.classList.add('dragging');
     el.style.zIndex=200;
 
-    const mm=ev=>{
-      const dx=ev.clientX/scale-startX,dy=ev.clientY/scale-startY;
+    function mm(ev){
+      var dx=ev.clientX/scale-startX,dy=ev.clientY/scale-startY;
       if(Math.abs(dx)+Math.abs(dy)>3) wasDragged=true;
       pos[id].x=startPX+dx;
       pos[id].y=startPY+dy;
       el.style.left=pos[id].x+'px';
       el.style.top=pos[id].y+'px';
-      updateLinkPositions();
-    };
-    const mu=()=>{
+      updateEdgePositions();
+    }
+    function mu(){
       el.classList.remove('dragging');
       el.style.zIndex=10;
       window.removeEventListener('mousemove',mm);
       window.removeEventListener('mouseup',mu);
-    };
+      if(wasDragged){savePositions();showSaveToast();}
+    }
     window.addEventListener('mousemove',mm);
     window.addEventListener('mouseup',mu);
   });
 
-  // Touch drag
-  el.addEventListener('touchstart',e=>{
+  el.addEventListener('touchstart',function(e){
     if(e.touches.length!==1) return;
     e.stopPropagation();
     wasDragged=false;
-    const t0=e.touches[0];
-    const startX=t0.clientX/scale,startY=t0.clientY/scale;
-    const startPX=pos[id].x,startPY=pos[id].y;
+    var t0=e.touches[0];
+    var startX=t0.clientX/scale,startY=t0.clientY/scale;
+    var startPX=pos[id].x,startPY=pos[id].y;
     el.classList.add('dragging');
 
-    const mm=ev=>{
+    function mm(ev){
       ev.preventDefault();
-      const dx=ev.touches[0].clientX/scale-startX,dy=ev.touches[0].clientY/scale-startY;
+      var dx=ev.touches[0].clientX/scale-startX,dy=ev.touches[0].clientY/scale-startY;
       if(Math.abs(dx)+Math.abs(dy)>3) wasDragged=true;
       pos[id].x=startPX+dx;pos[id].y=startPY+dy;
       el.style.left=pos[id].x+'px';el.style.top=pos[id].y+'px';
-      updateLinkPositions();
-    };
-    const mu=()=>{
+      updateEdgePositions();
+    }
+    function mu(){
       el.classList.remove('dragging');
       el.removeEventListener('touchmove',mm);el.removeEventListener('touchend',mu);
-    };
+      if(wasDragged){savePositions();showSaveToast();}
+    }
     el.addEventListener('touchmove',mm,{passive:false});
     el.addEventListener('touchend',mu);
   },{passive:true});
@@ -673,53 +841,107 @@ function attachDrag(el,id){
 // ═══════════════════════════════════════════════════════
 // PANEL
 // ═══════════════════════════════════════════════════════
-let selId=null;
+var selId=null;
+
+function createTextEl(tag, cls, text) {
+  var el = document.createElement(tag);
+  if (cls) el.className = cls;
+  el.textContent = text;
+  return el;
+}
+
 function openPanel(id){
   if(selId===id){closePanel();return;}
   selId=id;
-  Object.values(nodeEls).forEach(e=>e.classList.remove('sel'));
-  nodeEls[id]?.classList.add('sel');
+  for(var k in nodeEls) nodeEls[k].classList.remove('sel');
+  if(nodeEls[id]) nodeEls[id].classList.add('sel');
   document.getElementById('ph-id').textContent='ROOM '+id;
-  document.getElementById('ph-name').textContent=ROOMS[id]?.name||'—';
-  let html='';
-  if(ROOM_DESC[id]) html+=`<div class="pdesc">${ROOM_DESC[id]}</div>`;
+  document.getElementById('ph-name').textContent=ROOMS[id]?ROOMS[id].name:'';
 
-  const exits=LINKS.filter(l=>l.f===id);
+  var pb=document.getElementById('pb');
+  pb.textContent='';
+
+  if(ROOM_DESC[id]){
+    var desc=createTextEl('div','pdesc',ROOM_DESC[id]);
+    pb.appendChild(desc);
+  }
+
+  var exits=[];
+  for(var i=0;i<LINKS.length;i++){if(LINKS[i].f===id)exits.push(LINKS[i]);}
   if(exits.length){
-    html+=`<div class="ps-t">🚪 Exits</div>`;
-    exits.forEach(lk=>{
-      const dest=ROOMS[lk.t]?.name||'Room '+lk.t;
-      const cls=lk.type==='danger'?'tg':lk.type==='hidden'?'th':'td';
-      const icon=lk.type==='locked'?'🔒':lk.type==='riddle'?'❓':lk.type==='danger'?'⚠️':lk.type==='hidden'?'🔍':'🟢';
-      html+=`<div class="pi ${cls}"><div class="pi-ic">${icon}</div><div><div class="pi-n">${lk.n} → ${dest} (R${lk.t})</div>${lk.pw?`<span class="badge bb">KEY: "${lk.pw}"</span>`:''} ${lk.ans?`<span class="badge br">ANS: "${lk.ans}"</span>`:''} ${lk.need?`<span class="badge bw">NEED: ${lk.need}</span>`:''} ${lk.tool?`<span class="badge bg">BREAK: ${lk.tool}</span>`:''}</div></div>`;
-    });
+    pb.appendChild(createTextEl('div','ps-t','\ud83d\udeaa Exits'));
+    for(var i=0;i<exits.length;i++){
+      var lk=exits[i];
+      var dest=ROOMS[lk.t]?ROOMS[lk.t].name:'Room '+lk.t;
+      var cls=lk.type==='danger'?'tg':lk.type==='hidden'?'th':'td';
+      var icon=lk.type==='locked'?'\ud83d\udd12':lk.type==='riddle'?'\u2753':lk.type==='danger'?'\u26a0\ufe0f':lk.type==='hidden'?'\ud83d\udd0d':'\ud83d\udfe2';
+
+      var pi=document.createElement('div');pi.className='pi '+cls;
+      var ic=createTextEl('div','pi-ic',icon);
+      var info=document.createElement('div');
+      info.appendChild(createTextEl('div','pi-n',lk.n+' \u2192 '+dest+' (R'+lk.t+')'));
+      if(lk.pw){var b=createTextEl('span','badge bb','KEY: "'+lk.pw+'"');info.appendChild(b);}
+      if(lk.ans){var b=createTextEl('span','badge br','ANS: "'+lk.ans+'"');info.appendChild(b);}
+      if(lk.need){var b=createTextEl('span','badge bw','NEED: '+lk.need);info.appendChild(b);}
+      if(lk.tool){var b=createTextEl('span','badge bg','BREAK: '+lk.tool);info.appendChild(b);}
+      pi.appendChild(ic);pi.appendChild(info);
+      pb.appendChild(pi);
+    }
   }
 
-  const itms=ITEMS[id];
-  if(itms?.length){
-    html+=`<div class="ps-t">📦 Items</div>`;
-    itms.forEach(it=>{html+=`<div class="pi ti"><div class="pi-ic">${it.i}</div><div><div class="pi-n">${it.n}</div><div class="pi-d">${it.d}</div></div></div>`;});
-  }
-  const np=NPCS[id];
-  if(np?.length){
-    html+=`<div class="ps-t">👤 Characters</div>`;
-    np.forEach(n=>{
-      const cls=n.t==='enemy'?'te':'tn';
-      html+=`<div class="pi ${cls}"><div class="pi-ic">${n.i}</div><div><div class="pi-n">${n.n}</div>${n.w?`<span class="badge bg">WANTS: ${n.w}</span>`:''} ${n.wp?`<span class="badge bw">KILL: ${n.wp}</span>`:''} ${n.hid?`<span class="badge br">🔍 Hidden in monolith</span>`:''}<div class="pi-d">"${n.h}"</div></div></div>`;
-    });
-  }
-  const ho=HIDDEN_OBJ[id];
-  if(ho?.length){
-    html+=`<div class="ps-t">🔍 Hidden Objects</div>`;
-    ho.forEach(h=>{html+=`<div class="pi th"><div class="pi-ic">${h.i}</div><div><div class="pi-n">${h.n}</div><span class="badge bg">BREAK: ${h.tool}</span><div class="pi-d">Reveals: ${h.rev}</div></div></div>`;});
+  var itms=ITEMS[id];
+  if(itms&&itms.length){
+    pb.appendChild(createTextEl('div','ps-t','\ud83d\udce6 Items'));
+    for(var i=0;i<itms.length;i++){
+      var it=itms[i];
+      var pi=document.createElement('div');pi.className='pi ti';
+      pi.appendChild(createTextEl('div','pi-ic',it.i));
+      var info=document.createElement('div');
+      info.appendChild(createTextEl('div','pi-n',it.n));
+      info.appendChild(createTextEl('div','pi-d',it.d));
+      pi.appendChild(info);pb.appendChild(pi);
+    }
   }
 
-  document.getElementById('pb').innerHTML=html||'<div class="pdesc">No special details.</div>';
+  var np=NPCS[id];
+  if(np&&np.length){
+    pb.appendChild(createTextEl('div','ps-t','\ud83d\udc64 Characters'));
+    for(var i=0;i<np.length;i++){
+      var n=np[i];
+      var cls2=n.t==='enemy'?'te':'tn';
+      var pi=document.createElement('div');pi.className='pi '+cls2;
+      pi.appendChild(createTextEl('div','pi-ic',n.i));
+      var info=document.createElement('div');
+      info.appendChild(createTextEl('div','pi-n',n.n));
+      if(n.w) info.appendChild(createTextEl('span','badge bg','WANTS: '+n.w));
+      if(n.wp) info.appendChild(createTextEl('span','badge bw','KILL: '+n.wp));
+      if(n.hid) info.appendChild(createTextEl('span','badge br','\ud83d\udd0d Hidden in monolith'));
+      info.appendChild(createTextEl('div','pi-d','"'+n.h+'"'));
+      pi.appendChild(info);pb.appendChild(pi);
+    }
+  }
+
+  var ho=HIDDEN_OBJ[id];
+  if(ho&&ho.length){
+    pb.appendChild(createTextEl('div','ps-t','\ud83d\udd0d Hidden Objects'));
+    for(var i=0;i<ho.length;i++){
+      var h=ho[i];
+      var pi=document.createElement('div');pi.className='pi th';
+      pi.appendChild(createTextEl('div','pi-ic',h.i));
+      var info=document.createElement('div');
+      info.appendChild(createTextEl('div','pi-n',h.n));
+      info.appendChild(createTextEl('span','badge bg','BREAK: '+h.tool));
+      info.appendChild(createTextEl('div','pi-d','Reveals: '+h.rev));
+      pi.appendChild(info);pb.appendChild(pi);
+    }
+  }
+
+  if(!pb.children.length) pb.appendChild(createTextEl('div','pdesc','No special details.'));
   document.getElementById('panel').classList.add('open');
 }
 function closePanel(){
   selId=null;
-  Object.values(nodeEls).forEach(e=>e.classList.remove('sel'));
+  for(var k in nodeEls) nodeEls[k].classList.remove('sel');
   document.getElementById('panel').classList.remove('open');
 }
 document.getElementById('ph-close').addEventListener('click',closePanel);
@@ -727,17 +949,16 @@ document.getElementById('ph-close').addEventListener('click',closePanel);
 // ═══════════════════════════════════════════════════════
 // VIEWPORT PAN / ZOOM
 // ═══════════════════════════════════════════════════════
-let scale=0.65,panX=30,panY=20;
-const vp=document.getElementById('viewport');
+var scale=0.65,panX=30,panY=20;
+var vp=document.getElementById('viewport');
 
 function applyT(){
-  world.style.transform=`translate(${panX}px,${panY}px) scale(${scale})`;
+  world.style.transform='translate('+panX+'px,'+panY+'px) scale('+scale+')';
   document.getElementById('zlbl').textContent=Math.round(scale*100)+'%';
 }
 
-// Pan only on right-click, middle-click, or drag on empty area
-let isPanning=false,panStart={x:0,y:0},panOrigin={x:0,y:0};
-vp.addEventListener('mousedown',e=>{
+var isPanning=false,panStart={x:0,y:0},panOrigin={x:0,y:0};
+vp.addEventListener('mousedown',function(e){
   if(e.target.closest('.rnode')) return;
   if(e.button===0||e.button===1||e.button===2){
     isPanning=true;
@@ -747,53 +968,52 @@ vp.addEventListener('mousedown',e=>{
     e.preventDefault();
   }
 });
-window.addEventListener('mousemove',e=>{
+window.addEventListener('mousemove',function(e){
   if(!isPanning) return;
   panX=panOrigin.x+(e.clientX-panStart.x);
   panY=panOrigin.y+(e.clientY-panStart.y);
   applyT();
 });
-window.addEventListener('mouseup',e=>{
+window.addEventListener('mouseup',function(e){
   if(isPanning){isPanning=false;vp.style.cursor='default';}
 });
-vp.addEventListener('contextmenu',e=>e.preventDefault());
+vp.addEventListener('contextmenu',function(e){e.preventDefault();});
 
-vp.addEventListener('wheel',e=>{
+vp.addEventListener('wheel',function(e){
   e.preventDefault();
-  const r=vp.getBoundingClientRect();
-  const mx=e.clientX-r.left,my=e.clientY-r.top;
-  const ns=Math.max(0.15,Math.min(2.5,scale*(e.deltaY>0?0.88:1.12)));
-  const f=ns/scale;
+  var r=vp.getBoundingClientRect();
+  var mx=e.clientX-r.left,my=e.clientY-r.top;
+  var ns=Math.max(0.15,Math.min(2.5,scale*(e.deltaY>0?0.88:1.12)));
+  var f=ns/scale;
   panX=mx-f*(mx-panX);panY=my-f*(my-panY);
   scale=ns;applyT();
 },{passive:false});
 
-document.getElementById('zi').addEventListener('click',()=>{scale=Math.min(2.5,scale*1.2);applyT();});
-document.getElementById('zo').addEventListener('click',()=>{scale=Math.max(0.15,scale/1.2);applyT();});
-document.getElementById('zf').addEventListener('click',()=>{
-  const cw=vp.offsetWidth,ch=vp.offsetHeight;
-  // Find bounding box of all placed rooms
-  let minX=Infinity,minY=Infinity,maxX=-Infinity,maxY=-Infinity;
-  for(const id in pos){const p=pos[id];if(p){minX=Math.min(minX,p.x);minY=Math.min(minY,p.y);maxX=Math.max(maxX,p.x+W);maxY=Math.max(maxY,p.y+H);}}
-  const rw=maxX-minX+60,rh=maxY-minY+60;
+document.getElementById('zi').addEventListener('click',function(){scale=Math.min(2.5,scale*1.2);applyT();});
+document.getElementById('zo').addEventListener('click',function(){scale=Math.max(0.15,scale/1.2);applyT();});
+document.getElementById('zf').addEventListener('click',function(){
+  var cw=vp.offsetWidth,ch=vp.offsetHeight;
+  var minX=Infinity,minY=Infinity,maxX=-Infinity,maxY=-Infinity;
+  for(var id in pos){var p=pos[id];if(p){minX=Math.min(minX,p.x);minY=Math.min(minY,p.y);maxX=Math.max(maxX,p.x+W);maxY=Math.max(maxY,p.y+H);}}
+  var rw=maxX-minX+60,rh=maxY-minY+60;
   scale=Math.min(cw/rw,ch/rh)*0.9;
   panX=(cw-rw*scale)/2-minX*scale+30*scale;
   panY=(ch-rh*scale)/2-minY*scale+30*scale;
   applyT();
 });
-document.getElementById('zr').addEventListener('click',()=>{
+document.getElementById('zr').addEventListener('click',function(){
   resetPositions();
-  for(const id in nodeEls){
-    const p=pos[id];if(!p) continue;
+  localStorage.removeItem(STORAGE_KEY);
+  for(var id in nodeEls){
+    var p=pos[id];if(!p) continue;
     nodeEls[id].style.left=p.x+'px';nodeEls[id].style.top=p.y+'px';
   }
-  updateLinkPositions();
+  updateEdgePositions();
   document.getElementById('zf').click();
 });
 
-// Touch pan/zoom on viewport
-let vpTouchStart=null,vpPanOrigin=null,vpTouchDist=null;
-vp.addEventListener('touchstart',e=>{
+var vpTouchStart=null,vpPanOrigin=null,vpTouchDist=null;
+vp.addEventListener('touchstart',function(e){
   if(e.target.closest('.rnode')) return;
   if(e.touches.length===1){
     vpTouchStart={x:e.touches[0].clientX,y:e.touches[0].clientY};
@@ -802,7 +1022,7 @@ vp.addEventListener('touchstart',e=>{
     vpTouchDist=Math.hypot(e.touches[0].clientX-e.touches[1].clientX,e.touches[0].clientY-e.touches[1].clientY);
   }
 },{passive:true});
-vp.addEventListener('touchmove',e=>{
+vp.addEventListener('touchmove',function(e){
   if(e.target.closest('.rnode')) return;
   e.preventDefault();
   if(e.touches.length===1&&vpTouchStart&&vpPanOrigin){
@@ -810,82 +1030,80 @@ vp.addEventListener('touchmove',e=>{
     panY=vpPanOrigin.y+(e.touches[0].clientY-vpTouchStart.y);
     applyT();
   } else if(e.touches.length===2&&vpTouchDist){
-    const d=Math.hypot(e.touches[0].clientX-e.touches[1].clientX,e.touches[0].clientY-e.touches[1].clientY);
+    var d=Math.hypot(e.touches[0].clientX-e.touches[1].clientX,e.touches[0].clientY-e.touches[1].clientY);
     scale=Math.max(0.15,Math.min(2.5,scale*(d/vpTouchDist)));
     vpTouchDist=d;applyT();
   }
 },{passive:false});
-vp.addEventListener('touchend',()=>{vpTouchStart=null;vpPanOrigin=null;vpTouchDist=null;},{passive:true});
+vp.addEventListener('touchend',function(){vpTouchStart=null;vpPanOrigin=null;vpTouchDist=null;},{passive:true});
 
 // ═══════════════════════════════════════════════════════
-// LABEL TOGGLE
+// LABEL TOGGLE (labels visible by default, toggle hides)
 // ═══════════════════════════════════════════════════════
 document.getElementById('zlb').addEventListener('click',function(){
   this.classList.toggle('active');
-  svgEl.classList.toggle('show-labels');
+  svgEl.classList.toggle('hide-labels');
 });
 
 // ═══════════════════════════════════════════════════════
 // WIN PATH PANEL
 // ═══════════════════════════════════════════════════════
-const WIN_PATH=[
-  {phase:'Phase 1 — Gear up'},
-  {n:1, t:'<span class="mv">R1</span>: Take <b>Mace</b> + <b>Cherry Cake</b>'},
-  {n:2, t:'<span class="mv">R1→R4→R6</span> (tunnel + green door)'},
-  {n:3, t:'<span class="mv">R6</span>: Kill <b>Cyclops</b> with Mace → learn <span class="pw">"nombus rostomelaris"</span>'},
-  {n:4, t:'Open door, <span class="mv">R6→R7</span>: Take <b>Torch</b>'},
-  {n:5, t:'<span class="mv">R7→R8</span>: Take <b>Magic Powder</b> · back to R7'},
-  {n:6, t:'<span class="mv">R7→R15→R13→R14</span>: Take <b>Unicorn Heart</b> + <b>Painting</b>'},
-  {n:7, t:'<span class="mv">R14→R13→R16</span>: Take <b>Air Talisman</b>'},
-  {n:8, t:'<span class="mv">R16→R13→R23</span>: Take <b>Axe</b>'},
-  {phase:'Phase 2 — Armory'},
-  {n:9, t:'<span class="mv">R23→R13→R15→R7→R9</span>: Break <b>Bed</b> with Axe'},
-  {n:10,t:'<span class="mv">R9→R11</span>: Take <b>Sword + Dagger + Whip + Battering Ram</b>'},
-  {phase:'Phase 3 — First victory'},
-  {n:11,t:'<span class="mv">R11→R9→R7→R15→R13→R12</span>: Kill <b>Troll</b> with any weapon <span class="win">⭐ WIN #1</span>'},
-  {phase:'Phase 4 — Open beast path'},
-  {n:12,t:'<span class="mv">R12→R13→R23→R24</span>: Kill <b>Wolf</b> with Whip → learn <span class="pw">"agua"</span>'},
-  {n:13,t:'Open R24→R25 <span class="pw">(agua)</span>, answer riddle <span class="pw">"rumpelstinskin"</span>'},
-  {n:14,t:'<span class="mv">R25→R17→R18</span>: Enter the Beast'},
-  {phase:'Phase 5 — Beast interior'},
-  {n:15,t:'<span class="mv">R18→R19</span> (Air Talisman): Kill <b>Lung Center</b> w/ Sword <span class="win">⭐ WIN #2</span>'},
-  {n:16,t:'<span class="mv">R18→R20</span> (Cherry Cake): Kill <b>Stomach Center</b> w/ Whip <span class="win">⭐ WIN #3</span>'},
-  {n:17,t:'<span class="mv">R18→R21</span> (Unicorn Heart): Kill <b>Heart Center</b> w/ Dagger <span class="win">⭐ WIN #4</span>'},
-  {phase:'Phase 6 — Return to secret path'},
-  {n:18,t:'<span class="mv">R21→R18→R17→R25→R24→R1</span> (via Well in R24)'},
-  {n:19,t:'<span class="mv">R1</span>: Break <b>Lonely Wall</b> with Battering Ram → secret door'},
-  {n:20,t:'<span class="mv">R1→R27</span> (need Torch): Take <b>Hammer</b>, break <b>Satan Statue</b> with Painting'},
-  {n:21,t:'<span class="mv">R27→R28</span> (hidden door)'},
-  {phase:'Phase 7 — Labyrinth'},
-  {n:22,t:'<span class="mv">R28→R31→R32→R33→R34→R35→R36→R37→R29</span>'},
-  {n:23,t:'<span class="mv">R29</span>: Kill <b>Minotaur</b> with Sword → Take <b>Antorcha 3</b>'},
-  {n:24,t:'<span class="mv">R29→R47→R48→R49→R28</span> (labyrinth exit)'},
-  {phase:'Phase 8 — Brain'},
-  {n:25,t:'<span class="mv">R28</span>: Break <b>Crystal Column</b> with Antorcha 3'},
-  {n:26,t:'<span class="mv">R28</span>: Break revealed <b>Wooden Door</b> with Hammer → R28→R50'},
-  {n:27,t:'<span class="mv">R50</span>: Answer <span class="pw">"seis"</span> (iron door) → R30'},
-  {n:28,t:'<span class="mv">R30</span>: Answer <span class="pw">"cdfghjklmnopqruvwxyz"</span> (consonants only)'},
-  {n:29,t:'<span class="mv">R30→R22</span>: Kill <b>Brain Center</b> with Torch <span class="win">⭐ WIN #5 → VICTORY! 🏆</span>'},
+var WIN_PATH=[
+  {phase:'Phase 1 \u2014 Open Armory & Break Wall (weight limit: 40)'},
+  {n:1, t:'R1\u2192R4 (Tunnel) \u2192 R6 (Green door) \u2192 R13 (Book, one-way!) \u2192 R23 (Wooden door): Take Axe [W:10]'},
+  {n:2, t:'R23\u2192R13\u2192R15\u2192R7\u2192R9: Break Bed with Axe'},
+  {n:3, t:'R9\u2192R11: Drop Axe. Take Sword(5) + Dagger(3) + Whip(2) + Battering Ram(30) [W:40]'},
+  {n:4, t:'R11\u2192R9\u2192R7\u2192R15\u2192R13\u2192R23\u2192R24\u2192R1 (Well): Break Lonely Wall with Battering Ram'},
+  {n:5, t:'Drop Battering Ram. Keep Sword + Dagger + Whip [W:10]'},
+
+  {phase:'Phase 2 \u2014 Gather Talismans'},
+  {n:6, t:'R1: Take Cherry Cake [W:12]'},
+  {n:7, t:'R1\u2192R4\u2192R6\u2192R13\u2192R14 (Blue door): Take Unicorn Heart + Painting [W:23]'},
+  {n:8, t:'R14\u2192R13\u2192R16 (Iron door): Take Air Talisman [W:24]'},
+  {n:9, t:'R16\u2192R13\u2192R15\u2192R7: Take Torch [W:25]'},
+
+  {phase:'Phase 3 \u2014 Kill Troll & Conquer the Beast'},
+  {n:10, t:'R7\u2192R15\u2192R13\u2192R12 (Green door): Kill Troll with Sword \u2b50 WIN #1'},
+  {n:11, t:'R12\u2192R13\u2192R23\u2192R24: Kill Wolf with Whip \u2192 learn "agua"'},
+  {n:12, t:'Open Crystal door "agua" \u2192 R24\u2192R25: Answer "rumpelstinskin" at Triangular door'},
+  {n:13, t:'R25\u2192R17\u2192R18: Enter the Beast'},
+  {n:14, t:'R18\u2192R19 (Trachea \u2014 Air Talisman protects): Kill Lung Center with Sword \u2b50 WIN #2'},
+  {n:15, t:'R19\u2192R18\u2192R20 (Esophagus \u2014 Cherry Cake protects): Kill Stomach Center with Whip \u2b50 WIN #3'},
+  {n:16, t:'R20\u2192R18\u2192R21 (Main Artery \u2014 Unicorn Heart protects): Kill Heart Center with Dagger \u2b50 WIN #4'},
+  {n:17, t:'R21\u2192R18\u2192R17\u2192R25\u2192R24\u2192R1 (Well teleport back)'},
+
+  {phase:'Phase 4 \u2014 Secret Path & Brain'},
+  {n:18, t:'Drop unneeded items. Keep: Painting(10) + Torch(1) + Sword(5) [W:16]'},
+  {n:19, t:'R1\u2192R27 (Secret door \u2014 Torch protects): Take Hammer. Break Satan Statue with Painting. Drop Painting [W:8]'},
+  {n:20, t:'R27\u2192R28 (Hidden door revealed from step 19)'},
+  {n:21, t:'R28\u2192R31\u2192R32\u2192R33\u2192R34\u2192R35\u2192R36\u2192R37\u2192R29: Kill Minotaur with Sword. Take Antorcha 3 [W:10]'},
+  {n:22, t:'R29\u2192R47\u2192R48\u2192R49\u2192R28: Break Crystal Column with Antorcha 3. Break Wooden Door with Hammer'},
+  {n:23, t:'R28\u2192R50 \u2192 answer "seis" (Iron door) \u2192 R30 \u2192 answer "cdfghjklmnopqruvwxyz" (Golden door)'},
+  {n:24, t:'R30\u2192R22: Kill Brain Center with Torch \u2b50 WIN #5 \u2192 VICTORY! \ud83c\udfc6'},
 ];
 
 (function buildWinPath(){
-  let html='';
-  WIN_PATH.forEach(s=>{
+  var wb=document.getElementById('wb');
+  wb.textContent='';
+  for(var i=0;i<WIN_PATH.length;i++){
+    var s=WIN_PATH[i];
     if(s.phase){
-      html+=`<div class="wp-phase">${s.phase}</div>`;
+      wb.appendChild(createTextEl('div','wp-phase',s.phase));
     } else {
-      html+=`<div class="wp-step"><div class="wp-n">${s.n}.</div><div class="wp-t">${s.t}</div></div>`;
+      var step=document.createElement('div');step.className='wp-step';
+      step.appendChild(createTextEl('div','wp-n',s.n+'.'));
+      step.appendChild(createTextEl('div','wp-t',s.t));
+      wb.appendChild(step);
     }
-  });
-  document.getElementById('wb').innerHTML=html;
+  }
 })();
 
 document.getElementById('zwp').addEventListener('click',function(){
-  const wp=document.getElementById('winpath');
+  var wp=document.getElementById('winpath');
   wp.classList.toggle('open');
   this.classList.toggle('active');
 });
-document.getElementById('wp-close').addEventListener('click',()=>{
+document.getElementById('wp-close').addEventListener('click',function(){
   document.getElementById('winpath').classList.remove('open');
   document.getElementById('zwp').classList.remove('active');
 });
@@ -895,10 +1113,10 @@ document.getElementById('wp-close').addEventListener('click',()=>{
 // ═══════════════════════════════════════════════════════
 buildArrows();
 buildRooms();
-initSVGLinks();
-updateLinkPositions();
+initSVGEdges();
+updateEdgePositions();
 applyT();
-setTimeout(()=>document.getElementById('zf').click(),80);
+setTimeout(function(){document.getElementById('zf').click();},80);
 </script>
 </body>
 </html>
