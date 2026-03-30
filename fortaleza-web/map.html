@@ -85,7 +85,7 @@ header .sub{font-size:10px;color:var(--dim);font-style:italic;letter-spacing:1px
 .lk-g .lk-bg{opacity:1;transition:opacity .12s;}
 .lk-g .lk-txt{opacity:1;transition:opacity .12s;}
 #connsvg.hide-labels .lk-bg,#connsvg.hide-labels .lk-txt{opacity:0;}
-#connsvg.hide-labels .lk-g:hover .lk-bg,#connsvg.hide-labels .lk-g:hover .lk-txt{opacity:1;}
+#connsvg.hide-labels .lk-lbl:hover .lk-bg,#connsvg.hide-labels .lk-lbl:hover .lk-txt{opacity:1;}
 .zb.active{border-color:var(--gold);color:var(--gold);background:rgba(200,146,42,.12);}
 
 /* Win path panel */
@@ -149,7 +149,7 @@ header .sub{font-size:10px;color:var(--dim);font-style:italic;letter-spacing:1px
   <div class="wb" id="wb"></div>
 </div>
 
-<div class="save-toast" id="save-toast">Layout saved</div>
+<div class="save-toast" id="save-toast"></div>
 
 <div class="zc">
   <button class="zb" id="zi">+</button>
@@ -159,6 +159,7 @@ header .sub{font-size:10px;color:var(--dim);font-style:italic;letter-spacing:1px
   <button class="zb" id="zr" title="Reset layout" style="font-size:11px;font-family:'Cinzel',serif;">RST</button>
   <button class="zb" id="zlb" title="Toggle labels" style="font-size:10px;font-family:'Cinzel',serif;">LBL</button>
   <button class="zb" id="zwp" title="Win path">⭐</button>
+  <button class="zb" id="zlang" title="Switch language" style="font-size:10px;font-family:'Cinzel',serif;letter-spacing:1px;">ES</button>
 </div>
 <div class="hint">
   Drag rooms · Scroll to zoom · Click to inspect<br>
@@ -375,6 +376,196 @@ const ROOM_DESC={
 };
 
 // ═══════════════════════════════════════════════════════
+// LANGUAGE SUPPORT
+// ═══════════════════════════════════════════════════════
+var LANG='en';
+var ROOMS_ES={
+  1:"Exterior de la Fortaleza",2:"Salón de Recepciones",3:"Sala de Juegos",
+  4:"Patio Interior",5:"Cuarto de Espejos",6:"Biblioteca",7:"Pasillo",
+  8:"Alcoba de la Bruja",9:"Cuarto del Guerrero",10:"Laboratorio de la Bestia",
+  11:"Sala de Armas",12:"Baños de la Bestia",13:"El Jardín",
+  14:"Alcoba de la Doncella",15:"Sala de Infusiones",16:"Calabozos",
+  17:"Boca de la Bestia",18:"Interior de la Bestia",19:"Pulmones de la Bestia",
+  20:"Estómago de la Bestia",21:"Corazón de la Bestia",22:"Cerebro de la Bestia",
+  23:"Almacenes",24:"Páramo",25:"Salón de Cristal",26:"Celda Pequeña",
+  27:"Puente de Mármol",28:"Antesala del Laberinto",29:"Cueva del Minotauro",
+  30:"Salón de los Elegidos",50:"Jardín Falso",
+  31:"Pasillo",32:"Pasillo",33:"Pasillo",34:"Pasillo",35:"Pasillo",
+  36:"Pasillo",37:"Pasillo",38:"Pasillo",39:"Pasillo",40:"Pasillo",
+  41:"Pasillo",42:"Pasillo",43:"Pasillo",44:"Pasillo",45:"Pasillo",
+  46:"Pasillo",47:"Pasillo",48:"Pasillo",49:"Salida del Laberinto"
+};
+var EDGE_TR={
+  "Main door":"Puerta principal","Tunnel":"Túnel","Black door":"Puerta negra",
+  "Blue door":"Puerta azul","Staircase":"Escalera","Green door":"Puerta verde",
+  "Book":"Libro","Door":"Puerta","Old door":"Puerta vieja","Red door":"Puerta roja",
+  "Forbidden door":"Puerta prohibida","Gray door":"Puerta gris",
+  "Showcase":"Escaparate","Door (break bed)":"Puerta (romper cama)",
+  "Hidden door":"Puerta oculta","Iron door":"Puerta de hierro",
+  "Wooden door":"Puerta de madera","Yellow door":"Puerta amarilla",
+  "Crystal door":"Puerta de cristal","Well":"Pozo",
+  "Triangular door":"Puerta triangular","Cloth door":"Puerta de tela",
+  "Throat":"Garganta","Trachea":"Tráquea","Esophagus":"Esófago",
+  "Main artery":"Arteria principal","Secret door":"Puerta secreta",
+  "Door (no Sword!)":"Puerta (sin Espada!)",
+  "Door 1":"Puerta 1","Door 2":"Puerta 2","Door 3":"Puerta 3",
+  "All other doors":"Todas las puertas","Golden door":"Puerta dorada",
+  "Exit":"Salida","Black door":"Puerta negra"
+};
+var ITEM_TR={
+  "Mace":"Maza","Cherry Cake":"Pastel de Cerezas","Oak Tree":"Roble",
+  "Portrait":"Retrato","Broom":"Escoba","Ariadne's Thread":"Hilo de Ariadna",
+  "Inscription":"Inscripción","Scale":"Balanza","Cat Bone":"Hueso de Gato",
+  "Glass of Water":"Vaso de Agua","Candelabra":"Candelabro","Torch":"Antorcha",
+  "Magic Powder":"Polvo Mágico","Growing Potion":"Poción para Crecer",
+  "Bandages":"Vendajes","Engraving":"Grabado",
+  "Philosopher's Stone":"Piedra Filosofal","Time Machine":"Máquina del Tiempo",
+  "Sword":"Espada","Lance":"Lanza","Bow":"Arco","Dagger":"Daga",
+  "Battering Ram":"Ariete","Whip":"Látigo","Rose":"Rosa","Mirror":"Espejo",
+  "Painting":"Cuadro","Unicorn Heart":"Corazón de Unicornio",
+  "Coffee Cup":"Taza de Café","Cigarette":"Cigarro",
+  "Umbrella":"Paraguas","Air Talisman":"Talismán de Aire",
+  "Axe":"Hacha","Hammer":"Martillo","7 Torches":"7 Antorchas"
+};
+var ITEM_D_TR={
+  "Break marble monolith - reveals Trebol":"Rompe monolito de mármol - revela a Trébol",
+  "Protects in Esophagus (R18-R20). DO NOT give to bat!":"Protege en Esófago (R18-R20). ¡NO dar al murciélago!",
+  "Carved: Magic words to open door are obvious.":"Tallado: Las palabras mágicas para abrir la puerta son obvias.",
+  "Hitchcock. Hints the 39 steps answer.":"Hitchcock. Pista: respuesta de los 39 escalones.",
+  "Give to Witch (R8)":"Dar a la Bruja (R8)",
+  "Give to Spider (R27)":"Dar a la Araña (R27)",
+  "Talk to the bat before almost reaching the end.":"Hablar con el murciélago antes de llegar casi al final.",
+  "Hand-shaped plate for weighing items.":"Plato en forma de mano para pesar objetos.",
+  "Break Opaque Mirror - hidden door to R14.":"Rompe Espejo Opaco - puerta oculta a R14.",
+  "Give to Trebol (R2)":"Dar a Trébol (R2)",
+  "MUST carry to survive Witch Showcase fall.":"LLEVAR para sobrevivir la caída del Escaparate.",
+  "Pass Secret Door (R27). Kill Brain Center (R22).":"Pasar Puerta Secreta (R27). Matar Centro Cerebro (R22).",
+  "Give to Troll (R12) before killing it.":"Dar al Troll (R12) antes de matarlo.",
+  "Give to Homunculus (R10).":"Dar al Homúnculo (R10).",
+  "Give to Daedalus (R28).":"Dar a Dédalo (R28).",
+  "Shows you talking with a girl.":"Te muestra hablando con una muchacha.",
+  "Give to Mouse (R23).":"Dar al Ratón (R23).",
+  "Give to Dancer (R25).":"Dar a la Bailarina (R25).",
+  "Kill: Harpy, Lung Center, Minotaur.":"Mata: Arpía, Centro Pulmones, Minotauro.",
+  "Give to Athena (R4).":"Dar a Atenea (R4).",
+  "Odysseus's bow.":"Arco de Odiseo.",
+  "Kill: Heart Center (R21).":"Mata: Centro Corazón (R21).",
+  "Break Lonely Wall (R1) - secret door.":"Rompe Pared Solitaria (R1) - puerta secreta.",
+  "Kill: Wolf (R24), Stomach Center (R20).":"Mata: Lobo (R24), Centro Estómago (R20).",
+  "Give to Maiden (R14).":"Dar a la Doncella (R14).",
+  "Shows handing powder to Troll.":"Te muestra dando polvos al Troll.",
+  "Kill the Troll!":"¡Mata al Troll!",
+  "Break Satan Statue (R27) - hidden door.":"Rompe Estatua de Satanás (R27) - puerta oculta.",
+  "Protects in Main Artery - Heart (R21).":"Protege en Arteria Principal - Corazón (R21).",
+  "Give to Skeleton (R16).":"Dar al Esqueleto (R16).",
+  "Give to Bronze Knocker (R1).":"Dar al Llamador de Bronce (R1).",
+  "Give to Hermes (R4).":"Dar a Hermes (R4).",
+  "MUST carry to survive Trachea - Lungs (R19).":"LLEVAR para sobrevivir Tráquea - Pulmones (R19).",
+  "Break Bed (R9) - door to Armory (R11).":"Rompe Cama (R9) - puerta a Armería (R11).",
+  "Break Wooden Door in R28 - path to R50.":"Rompe Puerta de Madera en R28 - camino a R50.",
+  "6 lit + 1 extinguished. Divine number = Torch 3.":"6 encendidas + 1 apagada. Número divino = Antorcha 3.",
+  "This is NOT the real Garden!":"¡Este NO es el Jardín verdadero!"
+};
+var NPC_TR={
+  "Bronze Knocker":"Llamador de Bronce","Trebol (Elf)":"Trébol (Duende)",
+  "Athena Statue":"Estatua de Atenea","Hermes Statue":"Estatua de Hermes",
+  "Cyclops":"Cíclope","Witch":"Bruja","Homunculus":"Homúnculo",
+  "Troll WIN#1":"Troll GANAR#1","Maiden":"Doncella","Harpy":"Arpía",
+  "Skeleton":"Esqueleto","Lung Center WIN#2":"Centro Pulmones GANAR#2",
+  "Stomach Center WIN#3":"Centro Estómago GANAR#3",
+  "Heart Center WIN#4":"Centro Corazón GANAR#4",
+  "Brain Center WIN#5":"Centro Cerebro GANAR#5",
+  "Mouse":"Ratón","Wolf":"Lobo","Dancer":"Bailarina",
+  "Spider":"Araña","Crunch (Bat)":"Crunch (Murciélago)",
+  "Daedalus":"Dédalo","Minotaur":"Minotauro"
+};
+var NPC_W_TR={
+  "Cigarette":"Cigarro","Glass of Water":"Vaso de Agua","Lance":"Lanza",
+  "Umbrella":"Paraguas","Broom":"Escoba","Growing Potion":"Poción para Crecer",
+  "Magic Powder":"Polvo Mágico","Rose":"Rosa","Coffee Cup":"Taza de Café",
+  "Ariadne's Thread":"Hilo de Ariadna","Cherry Cake":"Pastel de Cerezas",
+  "Bandages":"Vendajes","Time Machine":"Máquina del Tiempo",
+  "Philosopher's Stone":"Piedra Filosofal","Any weapon":"Cualquier arma",
+  "Mace":"Maza","Sword":"Espada","Whip":"Látigo","Dagger":"Daga","Torch":"Antorcha"
+};
+var NPC_H_TR={
+  "Gives name: Rumpelstinskin":"Da el nombre: Rumpelstinskin",
+  "Find maiden near mirror you break with a bone.":"Busca a la doncella junto al espejo que romperás con un hueso.",
+  "To reach lungs, have the air talisman.":"Para llegar a los pulmones, lleva el talismán de aire.",
+  "A book in the library leads to the garden.":"Un libro en la biblioteca lleva al jardín.",
+  "Reveals password: Nombus Rostomelaris":"Revela contraseña: Nombus Rostomelaris",
+  "When they say Forbidden, invoke the light.":"Cuando digan Prohibido, invoca la luz.",
+  "Carry candelabra through Witch Showcase.":"Lleva candelabro por el Escaparate de la Bruja.",
+  "Give Magic Powder first (hint), then kill with any weapon.":"Primero dar Polvo Mágico (pista), luego matar con cualquier arma.",
+  "The last room is at the beginning.":"La última habitación está al principio.",
+  "With this sword you will kill the lungs!":"¡Con esta espada matarás los pulmones!",
+  "When entering stomach, take a cake.":"Al entrar al estómago, lleva un pastel.",
+  "Destroyed with Sword.":"Destruido con Espada.",
+  "Destroyed with Whip.":"Destruido con Látigo.",
+  "Only fire destroys the brain.":"Solo el fuego destruye el cerebro.",
+  "VICTORY!":"¡VICTORIA!",
+  "Beware of tunnel and cloth door.":"Cuidado con el túnel y la puerta de tela.",
+  "Reveals password: Agua":"Revela contraseña: Agua",
+  "Only with a dagger can you kill the heart.":"Solo con una daga podrás matar al corazón.",
+  "Find the Minotaur and kill with sword.":"Busca al Minotauro y mátalo con la espada.",
+  "The 12 will guide you in the Labyrinth.":"El 12 te guiará en el Laberinto.",
+  "Only iron will protect you against the flowers.":"Solo el hierro te protegerá contra las flores.",
+  "Take Torch 3, break Crystal Column in R28.":"Toma Antorcha 3, rompe Columna de Cristal en R28."
+};
+var HIDDEN_TR={
+  "Lonely Wall":"Pared Solitaria","Marble Monolith":"Monolito de Mármol",
+  "Opaque Mirror":"Espejo Opaco","Bed":"Cama",
+  "Satan Statue":"Estatua de Satanás","Crystal Column":"Columna de Cristal"
+};
+var HIDDEN_TOOL_TR={
+  "Battering Ram":"Ariete","Mace":"Maza","Cat Bone":"Hueso de Gato",
+  "Axe":"Hacha","Painting":"Cuadro","Torch 3":"Antorcha 3"
+};
+var HIDDEN_REV_TR={
+  "Secret Door - R27":"Puerta Secreta - R27",
+  "Trebol the Elf (NPC)":"Trébol el Duende (PNJ)",
+  "Hidden Door - R14":"Puerta Oculta - R14",
+  "Door - Armory (R11)":"Puerta - Armería (R11)",
+  "Hidden Door - R28":"Puerta Oculta - R28",
+  "Wooden Door (break w/ Hammer - R50)":"Puerta de Madera (romper con Martillo - R50)"
+};
+var ROOM_DESC_ES={
+  1:"Paredes muy negras, sin ventanas. Las nubes ocultan las cimas de las torres.",
+  2:"Hecho para criaturas mucho más grandes. Desierto, pero te sientes observado.",
+  3:"Doce mesas. Cada una tiene doce erizos.",
+  4:"Patio en forma de caracol. Columnas de mármol negro. Hojas secas crujen bajo tus pies.",
+  5:"Tantos espejos que no puedes saber si eres real o una imagen.",
+  6:"Miles de libros, todos con una página marcada por una servilleta.",
+  7:"Tres puertas al lado y una al final.",
+  8:"Evidentemente aquí vive una bruja. La ventana era invisible desde afuera.",
+  9:"Todo muy ordenado. Extrañamente, no hay armas.",
+  10:"Muchos frascos. Los últimos están llenos de homúnculos.",
+  11:"Es como el sueño de un guerrero.",
+  12:"La bañera es tan grande que no se ven las paredes.",
+  13:"Tan grande que podrían construirse varias ciudades dentro.",
+  14:"Un cuarto muy pequeño y húmedo.",
+  15:"Mesas regadas por el suelo. Ningún humano ha estado aquí antes.",
+  16:"Tanta humedad que no durarías ni horas.",
+  17:"Como una boca humana, pero del tamaño de una casa.",
+  18:"Sientes los latidos, la respiración, los líquidos del estómago... ¡NO continúes sin protección!",
+  19:"El aire es tan fuerte que te has tirado al suelo.",
+  20:"Hay varios esqueletos humanos.",
+  21:"Todo palpita rítmicamente.",
+  22:"Como un catálogo gigante. Las ideas están en tarjetas.",
+  23:"Lleno de carne humana.",
+  24:"Poca vegetación. El suelo es pantanoso.",
+  25:"Como un caleidoscopio gigante. Las paredes cambian de color.",
+  26:"TRAMPA MORTAL - No hay forma de escapar.",
+  27:"Es muy largo y angosto.",
+  28:"Cómoda, pero hay maldad flotando en el aire.",
+  29:"Siete antorchas. (6 encendidas, 1 apagada - Antorcha 3 es el número divino)",
+  30:"Pocas personas han llegado aquí. El cerebro está detrás de la puerta.",
+  50:"¡ADVERTENCIA: Este NO es el Jardín verdadero! Casi todas las puertas llevan a la celda de muerte (R26)."
+};
+function rn(id){return LANG==='es'?(ROOMS_ES[id]||ROOMS[id].name):ROOMS[id].name;}
+function tl(en,dict){return LANG==='es'?(dict[en]||en):en;}
+
+// ═══════════════════════════════════════════════════════
 // DEDUPLICATE LINKS INTO EDGES
 // ═══════════════════════════════════════════════════════
 var EDGES = [];
@@ -559,6 +750,7 @@ function savePositions() {
 
 function showSaveToast() {
   var t = document.getElementById('save-toast');
+  t.textContent=LANG==='es'?'Layout guardado':'Layout saved';
   t.classList.add('show');
   clearTimeout(t._timer);
   t._timer = setTimeout(function() { t.classList.remove('show'); }, 1200);
@@ -607,10 +799,17 @@ function initSVGEdges(){
   }
   edgeEls=[];
 
+  // Two layers: lines render first, labels render on top of all lines
+  var linesLayer=document.createElementNS(NS,'g');
+  var labelsLayer=document.createElementNS(NS,'g');
+  svgEl.appendChild(linesLayer);
+  svgEl.appendChild(labelsLayer);
+
   for(var i=0;i<EDGES.length;i++){
     var edge=EDGES[i];
     var st=TSTYLE[edge.type]||TSTYLE.open;
-    var label=edge.pw?(edge.n+' \ud83d\udd12'):edge.ans?(edge.n+' \u2753'):edge.need?(edge.n+' \u26a0\ufe0f'):edge.tool?(edge.n+' \ud83d\udd0d'):edge.n;
+    var eName=LANG==='es'?(EDGE_TR[edge.n]||edge.n):edge.n;
+    var label=edge.pw?(eName+' \ud83d\udd12'):edge.ans?(eName+' \u2753'):edge.need?(eName+' \u26a0\ufe0f'):edge.tool?(eName+' \ud83d\udd0d'):eName;
     var aw=label.length*5+12;
 
     var curveOff=0;
@@ -619,13 +818,14 @@ function initSVGEdges(){
       curveOff=(edge._pairIndex-(edge._pairTotal-1)/2)*spread;
     }
 
-    var g=document.createElementNS(NS,'g');
-    g.setAttribute('class','lk-g');
-    g.dataset.f=edge.f; g.dataset.t=edge.t;
-    g.dataset.aw=aw; g.dataset.curve=curveOff;
-    g.dataset.bidir=edge.bidir?'1':'0';
-    g.dataset.pi=edge._pairIndex||0;
-    g.dataset.pt=edge._pairTotal||1;
+    // Path group (lines layer)
+    var pg=document.createElementNS(NS,'g');
+    pg.setAttribute('class','lk-g');
+    pg.dataset.f=edge.f; pg.dataset.t=edge.t;
+    pg.dataset.aw=aw; pg.dataset.curve=curveOff;
+    pg.dataset.bidir=edge.bidir?'1':'0';
+    pg.dataset.pi=edge._pairIndex||0;
+    pg.dataset.pt=edge._pairTotal||1;
 
     var path=document.createElementNS(NS,'path');
     path.setAttribute('stroke',st.stroke);
@@ -633,20 +833,25 @@ function initSVGEdges(){
     path.setAttribute('fill','none');
     if(st.dash!=='none')path.setAttribute('stroke-dasharray',st.dash);
     if(!edge.bidir) path.setAttribute('marker-end','url(#arr-'+st.arr+')');
-    g.appendChild(path);
+    pg.appendChild(path);
 
     var hit=document.createElementNS(NS,'path');
     hit.setAttribute('stroke','transparent');
     hit.setAttribute('stroke-width','12');
     hit.setAttribute('fill','none');
-    g.appendChild(hit);
+    pg.appendChild(hit);
+    linesLayer.appendChild(pg);
+
+    // Label group (labels layer — always on top of all lines)
+    var lg=document.createElementNS(NS,'g');
+    lg.setAttribute('class','lk-lbl');
 
     var bg=document.createElementNS(NS,'rect');
     bg.setAttribute('class','lk-bg');
     bg.setAttribute('width',aw); bg.setAttribute('height',14);
     bg.setAttribute('rx','2'); bg.setAttribute('fill','rgba(5,3,1,0.92)');
     bg.setAttribute('stroke',st.stroke); bg.setAttribute('stroke-width','0.5');
-    g.appendChild(bg);
+    lg.appendChild(bg);
 
     var tc=st.stroke==='#3a6a2a'?'#5aaa4a':st.stroke==='#9b2020'?'#e06060':st.stroke==='#5050b0'?'#8888ee':st.stroke==='#8a5010'?'#d07030':'#c080f0';
     var txt=document.createElementNS(NS,'text');
@@ -655,10 +860,10 @@ function initSVGEdges(){
     txt.setAttribute('font-size','7.5'); txt.setAttribute('font-family','Cinzel,serif');
     txt.setAttribute('letter-spacing','0.5'); txt.setAttribute('fill',tc);
     txt.textContent=label;
-    g.appendChild(txt);
+    lg.appendChild(txt);
+    labelsLayer.appendChild(lg);
 
-    svgEl.appendChild(g);
-    edgeEls.push(g);
+    edgeEls.push({pg:pg, lg:lg});
   }
 }
 
@@ -666,15 +871,16 @@ function updateEdgePositions(){
   // Phase 1: compute paths and initial label positions
   var labelBoxes=[];
   for(var i=0;i<EDGES.length;i++){
-    var g=edgeEls[i]; if(!g) continue;
-    var f=+g.dataset.f, t=+g.dataset.t;
+    var el=edgeEls[i]; if(!el) continue;
+    var pg=el.pg, lg=el.lg;
+    var f=+pg.dataset.f, t=+pg.dataset.t;
     var x1=cx(f), y1=cy(f), x2=cx(t), y2=cy(t);
     if(x1===null||x2===null||f===t){ labelBoxes.push(null); continue; }
 
-    var aw=+g.dataset.aw;
-    var curveOff=+g.dataset.curve;
-    var isBidir=g.dataset.bidir==='1';
-    var pi=+g.dataset.pi, pt=+g.dataset.pt;
+    var aw=+pg.dataset.aw;
+    var curveOff=+pg.dataset.curve;
+    var isBidir=pg.dataset.bidir==='1';
+    var pi=+pg.dataset.pi, pt=+pg.dataset.pt;
 
     var dx=x2-x1, dy=y2-y1, len=Math.sqrt(dx*dx+dy*dy)||1;
     var shrink=isBidir?0:8;
@@ -683,7 +889,6 @@ function updateEdgePositions(){
     // Vary label parametric position for parallel edges
     var labelT=0.5;
     if(pt>1){
-      // Spread labels along the edge: t ranges from 0.3 to 0.7
       labelT= pt===1 ? 0.5 : 0.3 + 0.4*pi/(pt-1);
     }
 
@@ -695,16 +900,15 @@ function updateEdgePositions(){
       var nx=-dy/len,ny=dx/len;
       var cpx=(x1+x2)/2+nx*curveOff,cpy=(y1+y2)/2+ny*curveOff;
       d='M'+x1.toFixed(1)+','+y1.toFixed(1)+' Q'+cpx.toFixed(1)+','+cpy.toFixed(1)+' '+ex2.toFixed(1)+','+ey2.toFixed(1);
-      // Quadratic bezier at parameter t: B(t) = (1-t)^2*P0 + 2(1-t)t*CP + t^2*P2
       var u=1-labelT;
       mx=u*u*x1+2*u*labelT*cpx+labelT*labelT*x2;
       my=u*u*y1+2*u*labelT*cpy+labelT*labelT*y2;
     }
-    g.children[0].setAttribute('d',d);
-    g.children[1].setAttribute('d',d);
+    pg.children[0].setAttribute('d',d);
+    pg.children[1].setAttribute('d',d);
 
     var lox=mx-aw/2, loy=my-17;
-    labelBoxes.push({i:i, x:lox, y:loy, w:aw, h:14, mx:mx, my:loy+10, g:g});
+    labelBoxes.push({i:i, x:lox, y:loy, w:aw, h:14, mx:mx, my:loy+10, lg:lg});
   }
 
   // Phase 2: collision detection — nudge overlapping labels apart
@@ -715,12 +919,9 @@ function updateEdgePositions(){
     for(var a=0;a<active.length;a++){
       for(var b=a+1;b<active.length;b++){
         var A=active[a], B=active[b];
-        // AABB overlap test
         if(A.x<B.x+B.w && A.x+A.w>B.x && A.y<B.y+B.h && A.y+A.h>B.y){
-          // Compute overlap amounts
           var overlapX=Math.min(A.x+A.w-B.x, B.x+B.w-A.x);
           var overlapY=Math.min(A.y+A.h-B.y, B.y+B.h-A.y);
-          // Push apart along smaller overlap axis
           if(overlapY<=overlapX){
             var pushY=overlapY/2+2;
             if(A.y<B.y){ A.y-=pushY; A.my-=pushY; B.y+=pushY; B.my+=pushY; }
@@ -737,11 +938,11 @@ function updateEdgePositions(){
     if(!moved) break;
   }
 
-  // Phase 3: apply final label positions
+  // Phase 3: apply final label positions (lg = label group: children[0]=rect, children[1]=text)
   for(var i=0;i<active.length;i++){
     var L=active[i];
-    L.g.children[2].setAttribute('x',L.x); L.g.children[2].setAttribute('y',L.y);
-    L.g.children[3].setAttribute('x',L.mx); L.g.children[3].setAttribute('y',L.my);
+    L.lg.children[0].setAttribute('x',L.x); L.lg.children[0].setAttribute('y',L.y);
+    L.lg.children[1].setAttribute('x',L.mx); L.lg.children[1].setAttribute('y',L.my);
   }
 }
 
@@ -787,7 +988,7 @@ function buildRooms(){
     if(c.hd>0) badgesArr.push('<span class="rb rb-hidden">\ud83d\udd0d'+c.hd+'</span>');
 
     var ridEl=document.createElement('div');ridEl.className='rid';ridEl.textContent='R'+id;
-    var rnEl=document.createElement('div');rnEl.className='rname';rnEl.textContent=room.name;
+    var rnEl=document.createElement('div');rnEl.className='rname';rnEl.textContent=rn(id);
     div.appendChild(ridEl);
     div.appendChild(rnEl);
     if(badgesArr.length>0){
@@ -904,35 +1105,37 @@ function openPanel(id){
   selId=id;
   for(var k in nodeEls) nodeEls[k].classList.remove('sel');
   if(nodeEls[id]) nodeEls[id].classList.add('sel');
-  document.getElementById('ph-id').textContent='ROOM '+id;
-  document.getElementById('ph-name').textContent=ROOMS[id]?ROOMS[id].name:'';
+  document.getElementById('ph-id').textContent=(LANG==='es'?'SALA ':'ROOM ')+id;
+  document.getElementById('ph-name').textContent=ROOMS[id]?rn(id):'';
 
   var pb=document.getElementById('pb');
   pb.textContent='';
 
-  if(ROOM_DESC[id]){
-    var desc=createTextEl('div','pdesc',ROOM_DESC[id]);
+  var descText=LANG==='es'?(ROOM_DESC_ES[id]||ROOM_DESC[id]):ROOM_DESC[id];
+  if(descText){
+    var desc=createTextEl('div','pdesc',descText);
     pb.appendChild(desc);
   }
 
   var exits=[];
   for(var i=0;i<LINKS.length;i++){if(LINKS[i].f===id)exits.push(LINKS[i]);}
   if(exits.length){
-    pb.appendChild(createTextEl('div','ps-t','\ud83d\udeaa Exits'));
+    pb.appendChild(createTextEl('div','ps-t',LANG==='es'?'\ud83d\udeaa Salidas':'\ud83d\udeaa Exits'));
     for(var i=0;i<exits.length;i++){
       var lk=exits[i];
-      var dest=ROOMS[lk.t]?ROOMS[lk.t].name:'Room '+lk.t;
+      var dest=ROOMS[lk.t]?rn(lk.t):(LANG==='es'?'Sala ':'Room ')+lk.t;
       var cls=lk.type==='danger'?'tg':lk.type==='hidden'?'th':'td';
       var icon=lk.type==='locked'?'\ud83d\udd12':lk.type==='riddle'?'\u2753':lk.type==='danger'?'\u26a0\ufe0f':lk.type==='hidden'?'\ud83d\udd0d':'\ud83d\udfe2';
+      var lkName=LANG==='es'?(EDGE_TR[lk.n]||lk.n):lk.n;
 
       var pi=document.createElement('div');pi.className='pi '+cls;
       var ic=createTextEl('div','pi-ic',icon);
       var info=document.createElement('div');
-      info.appendChild(createTextEl('div','pi-n',lk.n+' \u2192 '+dest+' (R'+lk.t+')'));
-      if(lk.pw){var b=createTextEl('span','badge bb','KEY: "'+lk.pw+'"');info.appendChild(b);}
-      if(lk.ans){var b=createTextEl('span','badge br','ANS: "'+lk.ans+'"');info.appendChild(b);}
-      if(lk.need){var b=createTextEl('span','badge bw','NEED: '+lk.need);info.appendChild(b);}
-      if(lk.tool){var b=createTextEl('span','badge bg','BREAK: '+lk.tool);info.appendChild(b);}
+      info.appendChild(createTextEl('div','pi-n',lkName+' \u2192 '+dest+' (R'+lk.t+')'));
+      if(lk.pw){var b=createTextEl('span','badge bb',(LANG==='es'?'CLAVE':'KEY')+': "'+lk.pw+'"');info.appendChild(b);}
+      if(lk.ans){var b=createTextEl('span','badge br',(LANG==='es'?'RESP':'ANS')+': "'+lk.ans+'"');info.appendChild(b);}
+      if(lk.need){var b=createTextEl('span','badge bw',(LANG==='es'?'NECESITA':'NEED')+': '+tl(lk.need,ITEM_TR));info.appendChild(b);}
+      if(lk.tool){var b=createTextEl('span','badge bg',(LANG==='es'?'ROMPER':'BREAK')+': '+tl(lk.tool,HIDDEN_TOOL_TR));info.appendChild(b);}
       pi.appendChild(ic);pi.appendChild(info);
       pb.appendChild(pi);
     }
@@ -940,52 +1143,52 @@ function openPanel(id){
 
   var itms=ITEMS[id];
   if(itms&&itms.length){
-    pb.appendChild(createTextEl('div','ps-t','\ud83d\udce6 Items'));
+    pb.appendChild(createTextEl('div','ps-t',LANG==='es'?'\ud83d\udce6 Objetos':'\ud83d\udce6 Items'));
     for(var i=0;i<itms.length;i++){
       var it=itms[i];
       var pi=document.createElement('div');pi.className='pi ti';
       pi.appendChild(createTextEl('div','pi-ic',it.i));
       var info=document.createElement('div');
-      info.appendChild(createTextEl('div','pi-n',it.n));
-      info.appendChild(createTextEl('div','pi-d',it.d));
+      info.appendChild(createTextEl('div','pi-n',tl(it.n,ITEM_TR)));
+      info.appendChild(createTextEl('div','pi-d',tl(it.d,ITEM_D_TR)));
       pi.appendChild(info);pb.appendChild(pi);
     }
   }
 
   var np=NPCS[id];
   if(np&&np.length){
-    pb.appendChild(createTextEl('div','ps-t','\ud83d\udc64 Characters'));
+    pb.appendChild(createTextEl('div','ps-t',LANG==='es'?'\ud83d\udc64 Personajes':'\ud83d\udc64 Characters'));
     for(var i=0;i<np.length;i++){
       var n=np[i];
       var cls2=n.t==='enemy'?'te':'tn';
       var pi=document.createElement('div');pi.className='pi '+cls2;
       pi.appendChild(createTextEl('div','pi-ic',n.i));
       var info=document.createElement('div');
-      info.appendChild(createTextEl('div','pi-n',n.n));
-      if(n.w) info.appendChild(createTextEl('span','badge bg','WANTS: '+n.w));
-      if(n.wp) info.appendChild(createTextEl('span','badge bw','KILL: '+n.wp));
-      if(n.hid) info.appendChild(createTextEl('span','badge br','\ud83d\udd0d Hidden in monolith'));
-      info.appendChild(createTextEl('div','pi-d','"'+n.h+'"'));
+      info.appendChild(createTextEl('div','pi-n',tl(n.n,NPC_TR)));
+      if(n.w) info.appendChild(createTextEl('span','badge bg',(LANG==='es'?'QUIERE':'WANTS')+': '+tl(n.w,NPC_W_TR)));
+      if(n.wp) info.appendChild(createTextEl('span','badge bw',(LANG==='es'?'MATAR':'KILL')+': '+tl(n.wp,NPC_W_TR)));
+      if(n.hid) info.appendChild(createTextEl('span','badge br',LANG==='es'?'\ud83d\udd0d Oculto en monolito':'\ud83d\udd0d Hidden in monolith'));
+      info.appendChild(createTextEl('div','pi-d','"'+tl(n.h,NPC_H_TR)+'"'));
       pi.appendChild(info);pb.appendChild(pi);
     }
   }
 
   var ho=HIDDEN_OBJ[id];
   if(ho&&ho.length){
-    pb.appendChild(createTextEl('div','ps-t','\ud83d\udd0d Hidden Objects'));
+    pb.appendChild(createTextEl('div','ps-t',LANG==='es'?'\ud83d\udd0d Objetos Ocultos':'\ud83d\udd0d Hidden Objects'));
     for(var i=0;i<ho.length;i++){
       var h=ho[i];
       var pi=document.createElement('div');pi.className='pi th';
       pi.appendChild(createTextEl('div','pi-ic',h.i));
       var info=document.createElement('div');
-      info.appendChild(createTextEl('div','pi-n',h.n));
-      info.appendChild(createTextEl('span','badge bg','BREAK: '+h.tool));
-      info.appendChild(createTextEl('div','pi-d','Reveals: '+h.rev));
+      info.appendChild(createTextEl('div','pi-n',tl(h.n,HIDDEN_TR)));
+      info.appendChild(createTextEl('span','badge bg',(LANG==='es'?'ROMPER':'BREAK')+': '+tl(h.tool,HIDDEN_TOOL_TR)));
+      info.appendChild(createTextEl('div','pi-d',(LANG==='es'?'Revela: ':'Reveals: ')+tl(h.rev,HIDDEN_REV_TR)));
       pi.appendChild(info);pb.appendChild(pi);
     }
   }
 
-  if(!pb.children.length) pb.appendChild(createTextEl('div','pdesc','No special details.'));
+  if(!pb.children.length) pb.appendChild(createTextEl('div','pdesc',LANG==='es'?'Sin detalles especiales.':'No special details.'));
   document.getElementById('panel').classList.add('open');
 }
 function closePanel(){
@@ -1097,43 +1300,75 @@ document.getElementById('zlb').addEventListener('click',function(){
 // ═══════════════════════════════════════════════════════
 // WIN PATH PANEL
 // ═══════════════════════════════════════════════════════
-var WIN_PATH=[
+var WIN_PATH_EN=[
   {phase:'Phase 1 \u2014 Open Armory & Break Wall (weight limit: 40)'},
-  {n:1, t:'R1\u2192R4 (Tunnel) \u2192 R6 (Green door) \u2192 R13 (Book, one-way!) \u2192 R23 (Wooden door): Take Axe [W:10]'},
-  {n:2, t:'R23\u2192R13\u2192R15\u2192R7\u2192R9: Break Bed with Axe'},
-  {n:3, t:'R9\u2192R11: Drop Axe. Take Sword(5) + Dagger(3) + Whip(2) + Battering Ram(30) [W:40]'},
-  {n:4, t:'R11\u2192R9\u2192R7\u2192R15\u2192R13\u2192R23\u2192R24\u2192R1 (Well): Break Lonely Wall with Battering Ram'},
+  {n:1, t:'R1 \u2192Tunnel\u2192 R4 \u2192Green door\u2192 R6 \u2192Book\u2192 R13 \u2192Wooden door\u2192 R23: Take Axe [W:10]'},
+  {n:2, t:'R23 \u2192Wooden door\u2192 R13 \u2192Yellow door\u2192 R15 \u2192Gray door\u2192 R7 \u2192Red door\u2192 R9: Break Bed with Axe'},
+  {n:3, t:'R9 \u2192Door\u2192 R11: Drop Axe. Take Sword(5) + Dagger(3) + Whip(2) + Battering Ram(30) [W:40]'},
+  {n:4, t:'R11 \u2192Door\u2192 R9 \u2192Red door\u2192 R7 \u2192Gray door\u2192 R15 \u2192Yellow door\u2192 R13 \u2192Wooden door\u2192 R23 \u2192Green door\u2192 R24 \u2192Well\u2192 R1: Break Lonely Wall with Battering Ram'},
   {n:5, t:'Drop Battering Ram. Keep Sword + Dagger + Whip [W:10]'},
-
   {phase:'Phase 2 \u2014 Gather Talismans'},
   {n:6, t:'R1: Take Cherry Cake [W:12]'},
-  {n:7, t:'R1\u2192R4\u2192R6\u2192R13\u2192R14 (Blue door): Take Unicorn Heart + Painting [W:23]'},
-  {n:8, t:'R14\u2192R13\u2192R16 (Iron door): Take Air Talisman [W:24]'},
-  {n:9, t:'R16\u2192R13\u2192R15\u2192R7: Take Torch [W:25]'},
-
+  {n:7, t:'R1 \u2192Tunnel\u2192 R4 \u2192Green door\u2192 R6 \u2192Book\u2192 R13 \u2192Blue door\u2192 R14: Take Unicorn Heart + Painting [W:23]'},
+  {n:8, t:'R14 \u2192Blue door\u2192 R13 \u2192Iron door\u2192 R16: Take Air Talisman [W:24]'},
+  {n:9, t:'R16 \u2192Iron door\u2192 R13 \u2192Yellow door\u2192 R15 \u2192Gray door\u2192 R7: Take Torch [W:25]'},
   {phase:'Phase 3 \u2014 Kill Troll & Conquer the Beast'},
-  {n:10, t:'R7\u2192R15\u2192R13\u2192R12 (Green door): Kill Troll with Sword \u2b50 WIN #1'},
-  {n:11, t:'R12\u2192R13\u2192R23\u2192R24: Kill Wolf with Whip \u2192 learn "agua"'},
-  {n:12, t:'Open Crystal door "agua" \u2192 R24\u2192R25: Answer "rumpelstinskin" at Triangular door'},
-  {n:13, t:'R25\u2192R17\u2192R18: Enter the Beast'},
-  {n:14, t:'R18\u2192R19 (Trachea \u2014 Air Talisman protects): Kill Lung Center with Sword \u2b50 WIN #2'},
-  {n:15, t:'R19\u2192R18\u2192R20 (Esophagus \u2014 Cherry Cake protects): Kill Stomach Center with Whip \u2b50 WIN #3'},
-  {n:16, t:'R20\u2192R18\u2192R21 (Main Artery \u2014 Unicorn Heart protects): Kill Heart Center with Dagger \u2b50 WIN #4'},
-  {n:17, t:'R21\u2192R18\u2192R17\u2192R25\u2192R24\u2192R1 (Well teleport back)'},
-
+  {n:10, t:'R7 \u2192Gray door\u2192 R15 \u2192Yellow door\u2192 R13 \u2192Green door\u2192 R12: Kill Troll with Sword \u2b50 WIN #1'},
+  {n:11, t:'R12 \u2192Green door\u2192 R13 \u2192Wooden door\u2192 R23 \u2192Green door\u2192 R24: Kill Wolf with Whip \u2192 learn "agua"'},
+  {n:12, t:'R24 \u2192Crystal door (pw: "agua")\u2192 R25: Answer "rumpelstinskin" at Triangular door'},
+  {n:13, t:'R25 \u2192Triangular door\u2192 R17 \u2192Throat\u2192 R18: Enter the Beast'},
+  {n:14, t:'R18 \u2192Trachea\u2192 R19 (Air Talisman protects): Kill Lung Center with Sword \u2b50 WIN #2'},
+  {n:15, t:'R19 \u2192Trachea\u2192 R18 \u2192Esophagus\u2192 R20 (Cherry Cake protects): Kill Stomach Center with Whip \u2b50 WIN #3'},
+  {n:16, t:'R20 \u2192Esophagus\u2192 R18 \u2192Main artery\u2192 R21 (Unicorn Heart protects): Kill Heart Center with Dagger \u2b50 WIN #4'},
+  {n:17, t:'R21 \u2192Main artery\u2192 R18 \u2192Throat\u2192 R17 \u2192Triangular door\u2192 R25 \u2192Crystal door\u2192 R24 \u2192Well\u2192 R1'},
   {phase:'Phase 4 \u2014 Secret Path & Brain'},
   {n:18, t:'Drop unneeded items. Keep: Painting(10) + Torch(1) + Sword(5) [W:16]'},
-  {n:19, t:'R1\u2192R27 (Secret door \u2014 Torch protects): Take Hammer. Break Satan Statue with Painting. Drop Painting [W:8]'},
-  {n:20, t:'R27\u2192R28 (Hidden door revealed from step 19)'},
-  {n:21, t:'R28\u2192R31\u2192R32\u2192R33\u2192R34\u2192R35\u2192R36\u2192R37\u2192R29: Kill Minotaur with Sword. Take Antorcha 3 [W:10]'},
-  {n:22, t:'R29\u2192R47\u2192R48\u2192R49\u2192R28: Break Crystal Column with Antorcha 3. Break Wooden Door with Hammer'},
-  {n:23, t:'R28\u2192R50 \u2192 answer "seis" (Iron door) \u2192 R30 \u2192 answer "cdfghjklmnopqruvwxyz" (Golden door)'},
-  {n:24, t:'R30\u2192R22: Kill Brain Center with Torch \u2b50 WIN #5 \u2192 VICTORY! \ud83c\udfc6'},
+  {n:19, t:'R1 \u2192Secret door\u2192 R27 (Torch protects): Take Hammer. Break Satan Statue with Painting. Drop Painting [W:8]'},
+  {n:20, t:'R27 \u2192Hidden door\u2192 R28 (revealed from step 19)'},
+  {n:21, t:'R28 \u2192Green door\u2192 R31 \u2192Door 1\u2192 R32 \u2192Door 2\u2192 R33 \u2192Door 3\u2192 R34 \u2192Door 1\u2192 R35 \u2192Door 2\u2192 R36 \u2192Door 3\u2192 R37 \u2192Door 1\u2192 R29: Kill Minotaur with Sword. Take Torch 3 [W:10]'},
+  {n:22, t:'R29 \u2192Door\u2192 R47 \u2192Door 3\u2192 R48 \u2192Door 2\u2192 R49 \u2192Exit\u2192 R28: Break Crystal Column with Torch 3. Break Wooden Door with Hammer'},
+  {n:23, t:'R28 \u2192Black door\u2192 R50 \u2192Iron door (ans: "seis")\u2192 R30: Answer "cdfghjklmnopqruvwxyz" at Golden door'},
+  {n:24, t:'R30 \u2192Golden door\u2192 R22: Kill Brain Center with Torch \u2b50 WIN #5 \u2192 VICTORY! \ud83c\udfc6'},
+];
+var WIN_PATH_ES=[
+  {phase:'Fase 1 \u2014 Abrir Armer\u00eda y Romper Pared (l\u00edmite peso: 40)'},
+  {n:1, t:'R1 \u2192T\u00fanel\u2192 R4 \u2192Puerta verde\u2192 R6 \u2192Libro\u2192 R13 \u2192Puerta de madera\u2192 R23: Tomar Hacha [P:10]'},
+  {n:2, t:'R23 \u2192Puerta de madera\u2192 R13 \u2192Puerta amarilla\u2192 R15 \u2192Puerta gris\u2192 R7 \u2192Puerta roja\u2192 R9: Romper Cama con Hacha'},
+  {n:3, t:'R9 \u2192Puerta\u2192 R11: Soltar Hacha. Tomar Espada(5) + Daga(3) + L\u00e1tigo(2) + Ariete(30) [P:40]'},
+  {n:4, t:'R11 \u2192Puerta\u2192 R9 \u2192Puerta roja\u2192 R7 \u2192Puerta gris\u2192 R15 \u2192Puerta amarilla\u2192 R13 \u2192Puerta de madera\u2192 R23 \u2192Puerta verde\u2192 R24 \u2192Pozo\u2192 R1: Romper Pared Solitaria con Ariete'},
+  {n:5, t:'Soltar Ariete. Quedarse con Espada + Daga + L\u00e1tigo [P:10]'},
+  {phase:'Fase 2 \u2014 Recoger Talismanes'},
+  {n:6, t:'R1: Tomar Pastel de Cerezas [P:12]'},
+  {n:7, t:'R1 \u2192T\u00fanel\u2192 R4 \u2192Puerta verde\u2192 R6 \u2192Libro\u2192 R13 \u2192Puerta azul\u2192 R14: Tomar Coraz\u00f3n de Unicornio + Cuadro [P:23]'},
+  {n:8, t:'R14 \u2192Puerta azul\u2192 R13 \u2192Puerta de hierro\u2192 R16: Tomar Talism\u00e1n de Aire [P:24]'},
+  {n:9, t:'R16 \u2192Puerta de hierro\u2192 R13 \u2192Puerta amarilla\u2192 R15 \u2192Puerta gris\u2192 R7: Tomar Antorcha [P:25]'},
+  {phase:'Fase 3 \u2014 Matar Troll y Conquistar a la Bestia'},
+  {n:10, t:'R7 \u2192Puerta gris\u2192 R15 \u2192Puerta amarilla\u2192 R13 \u2192Puerta verde\u2192 R12: Matar Troll con Espada \u2b50 GANAR #1'},
+  {n:11, t:'R12 \u2192Puerta verde\u2192 R13 \u2192Puerta de madera\u2192 R23 \u2192Puerta verde\u2192 R24: Matar Lobo con L\u00e1tigo \u2192 aprender "agua"'},
+  {n:12, t:'R24 \u2192Puerta de cristal (clave: "agua")\u2192 R25: Responder "rumpelstinskin" en Puerta triangular'},
+  {n:13, t:'R25 \u2192Puerta triangular\u2192 R17 \u2192Garganta\u2192 R18: Entrar a la Bestia'},
+  {n:14, t:'R18 \u2192Tr\u00e1quea\u2192 R19 (Talism\u00e1n Aire protege): Matar Centro Pulmones con Espada \u2b50 GANAR #2'},
+  {n:15, t:'R19 \u2192Tr\u00e1quea\u2192 R18 \u2192Es\u00f3fago\u2192 R20 (Pastel protege): Matar Centro Est\u00f3mago con L\u00e1tigo \u2b50 GANAR #3'},
+  {n:16, t:'R20 \u2192Es\u00f3fago\u2192 R18 \u2192Arteria principal\u2192 R21 (Coraz\u00f3n Unicornio protege): Matar Centro Coraz\u00f3n con Daga \u2b50 GANAR #4'},
+  {n:17, t:'R21 \u2192Arteria principal\u2192 R18 \u2192Garganta\u2192 R17 \u2192Puerta triangular\u2192 R25 \u2192Puerta de cristal\u2192 R24 \u2192Pozo\u2192 R1'},
+  {phase:'Fase 4 \u2014 Camino Secreto y Cerebro'},
+  {n:18, t:'Soltar objetos innecesarios. Quedarse con: Cuadro(10) + Antorcha(1) + Espada(5) [P:16]'},
+  {n:19, t:'R1 \u2192Puerta secreta\u2192 R27 (Antorcha protege): Tomar Martillo. Romper Estatua Satan\u00e1s con Cuadro. Soltar Cuadro [P:8]'},
+  {n:20, t:'R27 \u2192Puerta oculta\u2192 R28 (revelada en paso 19)'},
+  {n:21, t:'R28 \u2192Puerta verde\u2192 R31 \u2192Puerta 1\u2192 R32 \u2192Puerta 2\u2192 R33 \u2192Puerta 3\u2192 R34 \u2192Puerta 1\u2192 R35 \u2192Puerta 2\u2192 R36 \u2192Puerta 3\u2192 R37 \u2192Puerta 1\u2192 R29: Matar Minotauro con Espada. Tomar Antorcha 3 [P:10]'},
+  {n:22, t:'R29 \u2192Puerta\u2192 R47 \u2192Puerta 3\u2192 R48 \u2192Puerta 2\u2192 R49 \u2192Salida\u2192 R28: Romper Columna Cristal con Antorcha 3. Romper Puerta Madera con Martillo'},
+  {n:23, t:'R28 \u2192Puerta negra\u2192 R50 \u2192Puerta de hierro (resp: "seis")\u2192 R30: Responder "cdfghjklmnopqruvwxyz" en Puerta dorada'},
+  {n:24, t:'R30 \u2192Puerta dorada\u2192 R22: Matar Centro Cerebro con Antorcha \u2b50 GANAR #5 \u2192 \u00a1VICTORIA! \ud83c\udfc6'},
 ];
 
-(function buildWinPath(){
+function buildWinPath(){
+  var WIN_PATH=LANG==='es'?WIN_PATH_ES:WIN_PATH_EN;
   var wb=document.getElementById('wb');
   wb.textContent='';
+  var whTitle=document.querySelector('.wh-title');
+  var whSub=document.querySelector('.wh-sub');
+  if(whTitle) whTitle.textContent=LANG==='es'?'\u2b50 Camino M\u00ednimo para Ganar':'\u2b50 Minimum Win Path';
+  if(whSub) whSub.textContent=LANG==='es'?'~24 pasos \u00b7 ruta \u00f3ptima con conocimiento completo':'~24 steps \u00b7 optimal route assuming full knowledge';
   for(var i=0;i<WIN_PATH.length;i++){
     var s=WIN_PATH[i];
     if(s.phase){
@@ -1145,7 +1380,8 @@ var WIN_PATH=[
       wb.appendChild(step);
     }
   }
-})();
+}
+buildWinPath();
 
 document.getElementById('zwp').addEventListener('click',function(){
   var wp=document.getElementById('winpath');
@@ -1155,6 +1391,52 @@ document.getElementById('zwp').addEventListener('click',function(){
 document.getElementById('wp-close').addEventListener('click',function(){
   document.getElementById('winpath').classList.remove('open');
   document.getElementById('zwp').classList.remove('active');
+});
+
+// ═══════════════════════════════════════════════════════
+// LANGUAGE TOGGLE
+// ═══════════════════════════════════════════════════════
+function switchLang(newLang){
+  LANG=newLang;
+  document.getElementById('zlang').textContent=LANG==='en'?'ES':'EN';
+  // Update header subtitle
+  var sub=document.querySelector('header .sub');
+  if(sub) sub.textContent=LANG==='es'
+    ?'Mapa de Grafo Planar \u2014 arrastra para reorganizar \u00b7 clic para inspeccionar'
+    :'Planar Graph Map \u2014 Tutte embedding \u00b7 drag to rearrange \u00b7 click to inspect';
+  // Update legend
+  var legs=document.querySelectorAll('.leg');
+  var legLabels=LANG==='es'?['Abierta','Cerrada','Acertijo','Peligro','Oculta']:['Open','Locked','Riddle','Danger','Hidden'];
+  for(var i=0;i<legs.length&&i<legLabels.length;i++){
+    var svg=legs[i].querySelector('svg');
+    if(svg) legs[i].textContent='';
+    if(svg) legs[i].appendChild(svg);
+    legs[i].appendChild(document.createTextNode(legLabels[i]));
+  }
+  // Update hint text
+  var hint=document.querySelector('.hint');
+  if(hint) hint.innerHTML=LANG==='es'
+    ?'Arrastra salas \u00b7 Scroll para zoom \u00b7 Clic para inspeccionar<br>LBL = mostrar/ocultar etiquetas \u00b7 \u2b50 = gu\u00eda de camino<br>El layout se guarda al arrastrar'
+    :'Drag rooms \u00b7 Scroll to zoom \u00b7 Click to inspect<br>LBL = toggle link labels \u00b7 \u2b50 = win path guide<br>Layout auto-saves on drag';
+  // Update back link
+  var backLink=document.querySelector('header a');
+  if(backLink) backLink.textContent=LANG==='es'?'\u2190 JUEGO':'\u2190 GAME';
+  // Rebuild room names
+  for(var k in nodeEls){
+    var el=nodeEls[k];
+    var nameEl=el.querySelector('.rname');
+    if(nameEl) nameEl.textContent=rn(+k);
+  }
+  // Rebuild edge labels
+  initSVGEdges();
+  updateEdgePositions();
+  // Rebuild win path
+  buildWinPath();
+  // Refresh panel if open
+  if(selId!==null) openPanel(selId);
+}
+document.getElementById('zlang').addEventListener('click',function(){
+  switchLang(LANG==='en'?'es':'en');
 });
 
 // ═══════════════════════════════════════════════════════
