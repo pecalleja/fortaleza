@@ -615,7 +615,7 @@ function initSVGEdges(){
 
     var curveOff=0;
     if(edge._pairTotal>1){
-      var spread=22;
+      var spread=50;
       curveOff=(edge._pairIndex-(edge._pairTotal-1)/2)*spread;
     }
 
@@ -624,6 +624,8 @@ function initSVGEdges(){
     g.dataset.f=edge.f; g.dataset.t=edge.t;
     g.dataset.aw=aw; g.dataset.curve=curveOff;
     g.dataset.bidir=edge.bidir?'1':'0';
+    g.dataset.pi=edge._pairIndex||0;
+    g.dataset.pt=edge._pairTotal||1;
 
     var path=document.createElementNS(NS,'path');
     path.setAttribute('stroke',st.stroke);
@@ -661,38 +663,85 @@ function initSVGEdges(){
 }
 
 function updateEdgePositions(){
+  // Phase 1: compute paths and initial label positions
+  var labelBoxes=[];
   for(var i=0;i<EDGES.length;i++){
     var g=edgeEls[i]; if(!g) continue;
     var f=+g.dataset.f, t=+g.dataset.t;
     var x1=cx(f), y1=cy(f), x2=cx(t), y2=cy(t);
-    if(x1===null||x2===null||f===t) continue;
+    if(x1===null||x2===null||f===t){ labelBoxes.push(null); continue; }
 
     var aw=+g.dataset.aw;
     var curveOff=+g.dataset.curve;
     var isBidir=g.dataset.bidir==='1';
+    var pi=+g.dataset.pi, pt=+g.dataset.pt;
 
     var dx=x2-x1, dy=y2-y1, len=Math.sqrt(dx*dx+dy*dy)||1;
     var shrink=isBidir?0:8;
     var ex2=x2-dx/len*shrink, ey2=y2-dy/len*shrink;
 
-    // Straight lines for single edges (planar embedding);
-    // quadratic bezier only for parallel edges between same room pair
+    // Vary label parametric position for parallel edges
+    var labelT=0.5;
+    if(pt>1){
+      // Spread labels along the edge: t ranges from 0.3 to 0.7
+      labelT= pt===1 ? 0.5 : 0.3 + 0.4*pi/(pt-1);
+    }
+
     var d,mx,my;
     if(curveOff===0){
       d='M'+x1.toFixed(1)+','+y1.toFixed(1)+' L'+ex2.toFixed(1)+','+ey2.toFixed(1);
-      mx=(x1+ex2)/2;my=(y1+ey2)/2;
+      mx=x1+(ex2-x1)*labelT; my=y1+(ey2-y1)*labelT;
     }else{
       var nx=-dy/len,ny=dx/len;
       var cpx=(x1+x2)/2+nx*curveOff,cpy=(y1+y2)/2+ny*curveOff;
       d='M'+x1.toFixed(1)+','+y1.toFixed(1)+' Q'+cpx.toFixed(1)+','+cpy.toFixed(1)+' '+ex2.toFixed(1)+','+ey2.toFixed(1);
-      mx=0.25*x1+0.5*cpx+0.25*x2;my=0.25*y1+0.5*cpy+0.25*y2;
+      // Quadratic bezier at parameter t: B(t) = (1-t)^2*P0 + 2(1-t)t*CP + t^2*P2
+      var u=1-labelT;
+      mx=u*u*x1+2*u*labelT*cpx+labelT*labelT*x2;
+      my=u*u*y1+2*u*labelT*cpy+labelT*labelT*y2;
     }
     g.children[0].setAttribute('d',d);
     g.children[1].setAttribute('d',d);
 
     var lox=mx-aw/2, loy=my-17;
-    g.children[2].setAttribute('x',lox); g.children[2].setAttribute('y',loy);
-    g.children[3].setAttribute('x',mx); g.children[3].setAttribute('y',loy+10);
+    labelBoxes.push({i:i, x:lox, y:loy, w:aw, h:14, mx:mx, my:loy+10, g:g});
+  }
+
+  // Phase 2: collision detection — nudge overlapping labels apart
+  var active=[];
+  for(var i=0;i<labelBoxes.length;i++) if(labelBoxes[i]) active.push(labelBoxes[i]);
+  for(var iter=0;iter<8;iter++){
+    var moved=false;
+    for(var a=0;a<active.length;a++){
+      for(var b=a+1;b<active.length;b++){
+        var A=active[a], B=active[b];
+        // AABB overlap test
+        if(A.x<B.x+B.w && A.x+A.w>B.x && A.y<B.y+B.h && A.y+A.h>B.y){
+          // Compute overlap amounts
+          var overlapX=Math.min(A.x+A.w-B.x, B.x+B.w-A.x);
+          var overlapY=Math.min(A.y+A.h-B.y, B.y+B.h-A.y);
+          // Push apart along smaller overlap axis
+          if(overlapY<=overlapX){
+            var pushY=overlapY/2+2;
+            if(A.y<B.y){ A.y-=pushY; A.my-=pushY; B.y+=pushY; B.my+=pushY; }
+            else { A.y+=pushY; A.my+=pushY; B.y-=pushY; B.my-=pushY; }
+          }else{
+            var pushX=overlapX/2+2;
+            if(A.x<B.x){ A.x-=pushX; A.mx-=pushX; B.x+=pushX; B.mx+=pushX; }
+            else { A.x+=pushX; A.mx+=pushX; B.x-=pushX; B.mx-=pushX; }
+          }
+          moved=true;
+        }
+      }
+    }
+    if(!moved) break;
+  }
+
+  // Phase 3: apply final label positions
+  for(var i=0;i<active.length;i++){
+    var L=active[i];
+    L.g.children[2].setAttribute('x',L.x); L.g.children[2].setAttribute('y',L.y);
+    L.g.children[3].setAttribute('x',L.mx); L.g.children[3].setAttribute('y',L.my);
   }
 }
 
