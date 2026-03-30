@@ -1,9 +1,8 @@
 import { GameObject } from './GameObject.js';
 
-const MAX_WEIGHT = 40;
-
 export class Player {
-  constructor() {
+  constructor(maxWeight = 40) {
+    this.maxWeight = maxWeight;
     this.currentRoom = null;
     this.inventory = [];
     this.visits = 0;
@@ -23,11 +22,11 @@ export class Player {
   }
 
   remainingCapacity() {
-    return MAX_WEIGHT - this.currentWeight();
+    return this.maxWeight - this.currentWeight();
   }
 
   canCarry(item) {
-    return item.weight <= MAX_WEIGHT && (this.currentWeight() + item.weight) <= MAX_WEIGHT;
+    return item.weight <= this.maxWeight && (this.currentWeight() + item.weight) <= this.maxWeight;
   }
 
   take(item) {

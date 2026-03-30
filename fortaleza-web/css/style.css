@@ -82,6 +82,35 @@ html, body {
   margin-bottom: 1.5rem;
 }
 
+#intro-part-toggle {
+  display: flex;
+  gap: 12px;
+  margin-bottom: 1rem;
+}
+
+#intro-part-toggle .part-btn {
+  background: transparent;
+  color: var(--fg-dim);
+  border: 1px solid var(--fg-dim);
+  padding: 8px 24px;
+  font-family: inherit;
+  font-size: 0.9rem;
+  letter-spacing: 0.15em;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+#intro-part-toggle .part-btn.active {
+  color: var(--fg);
+  border-color: var(--fg);
+  background: rgba(0, 255, 65, 0.1);
+}
+
+#intro-part-toggle .part-btn:hover {
+  color: var(--fg);
+  border-color: var(--fg);
+}
+
 #intro-lang-toggle {
   display: flex;
   gap: 12px;

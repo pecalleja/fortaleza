@@ -1,7 +1,9 @@
 import { GameEngine } from './engine/GameEngine.js';
+import { loadPartData } from './data/loader.js';
 import * as i18n from './i18n/i18n.js';
 
 let engine = null;
+let partData = null;
 let commandHistory = [];
 let historyIndex = -1;
 
@@ -28,42 +30,9 @@ const exitsList = document.getElementById('exits-list');
 const progressText = document.getElementById('progress-text');
 const restartBtn = document.getElementById('restart-btn');
 
-// Intro story text
-const storyEs = [
-  'Usted es un hombre común, sumergido en una vida rutinaria y mediocre.',
-  'Día tras día espera que algo interesante aparezca en su camino.',
-  'Una mañana, luego de haber leído el periódico, encuentra una carta junto a la puerta.',
-  '',
-  '"Estimado señor:',
-  'Tengo el alto honor de comunicarle que usted ha sido designado para cumplir una de las misiones más importantes de la historia del hombre: Eliminar a la Bestia.',
-  '',
-  'La Bestia es una de las criaturas más temidas y misteriosas del universo. Según varios informes, habita un lugar llamado la Fortaleza, aunque hay quienes dicen que la Bestia y la Fortaleza son una misma cosa.',
-  '',
-  'Su misión es: adentrarse en la Fortaleza y matar a la Bestia. Nada más.',
-  '',
-  '                                    General X',
-  '                         Jefe de la Oficina de Casualidades"',
-];
-
-const storyEn = [
-  'You are an ordinary man, submerged in a routine and mediocre life.',
-  'Day after day you wait for something interesting to appear in your path.',
-  'One morning, after reading the newspaper, you find a letter by the door.',
-  '',
-  '"Dear sir:',
-  'I have the high honor of informing you that you have been designated to fulfill one of the most important missions in the history of mankind: To eliminate the Beast.',
-  '',
-  'The Beast is one of the most feared and mysterious creatures in the universe. According to several reports, it inhabits a place called the Fortress, although some say the Beast and the Fortress are one and the same.',
-  '',
-  'Your mission is: to enter the Fortress and kill the Beast. Nothing more.',
-  '',
-  '                                    General X',
-  '                         Chief of the Office of Casualties"',
-];
-
 // --- Initialization ---
 
-function init() {
+async function init() {
   // Read language from URL query parameter
   const urlParams = new URLSearchParams(window.location.search);
   const urlLang = urlParams.get('lang');
@@ -71,11 +40,18 @@ function init() {
     i18n.setLang(urlLang);
   }
 
-  // Sync <html lang> attribute and button states with the resolved language
+  // Load part data (default to part1)
+  const partId = urlParams.get('part') || 'part1';
+  partData = await loadPartData(partId);
+
+  // Sync button states
   const lang = i18n.getLang();
   document.documentElement.lang = lang;
   document.querySelectorAll('.lang-btn').forEach(btn => {
     btn.classList.toggle('active', btn.dataset.lang === lang);
+  });
+  document.querySelectorAll('.part-btn').forEach(btn => {
+    btn.classList.toggle('active', btn.dataset.part === partId);
   });
 
   updateIntro();
@@ -85,12 +61,16 @@ function init() {
 function updateIntro() {
   const lang = i18n.getLang();
   introTitle.textContent = i18n.t('introTitle');
-  introSubtitle.textContent = i18n.t('introSubtitle');
+  introSubtitle.textContent = partData
+    ? (lang === 'en' ? partData.config.subtitleEn : partData.config.subtitleEs)
+    : i18n.t('introSubtitle');
   introAuthor.textContent = i18n.t('introAuthor');
   introAdaptation.textContent = i18n.t('introAdaptation');
   startBtn.textContent = lang === 'en' ? 'BEGIN' : 'COMENZAR';
 
-  const story = lang === 'en' ? storyEn : storyEs;
+  const story = partData
+    ? (lang === 'en' ? partData.config.storyEn : partData.config.storyEs)
+    : [];
   // Build intro story using safe DOM methods
   while (introStory.firstChild) introStory.removeChild(introStory.firstChild);
   for (const line of story) {
@@ -108,9 +88,13 @@ function startGame() {
   introScreen.style.display = 'none';
   gameContainer.classList.add('active');
 
-  engine = new GameEngine();
+  engine = new GameEngine(partData);
   engine.onOutput = printLine;
   engine.onStateChange = updateUI;
+
+  // Update map link with current part
+  const mapBtn = document.getElementById('map-btn');
+  if (mapBtn) mapBtn.href = `map.html?part=${partData.config.id}`;
 
   // Greeting based on time
   const hour = new Date().getHours();
@@ -245,7 +229,7 @@ function updateInventory() {
   }
 
   const current = engine.player.currentWeight();
-  const max = 40;
+  const max = engine.config.maxWeight;
   const pct = Math.min((current / max) * 100, 100);
   weightFill.style.width = pct + '%';
 
@@ -283,7 +267,7 @@ function updateLocation() {
     exitsList.appendChild(li);
   }
 
-  const totalRooms = 50;
+  const totalRooms = engine.config.totalRooms;
   const visited = engine.player.visits;
   const pct = Math.round((visited / totalRooms) * 100);
   progressText.textContent = lang === 'en'
@@ -402,7 +386,7 @@ function restartGame() {
   while (terminal.firstChild) terminal.removeChild(terminal.firstChild);
   commandHistory = [];
   historyIndex = -1;
-  engine = new GameEngine();
+  engine = new GameEngine(partData);
   engine.onOutput = printLine;
   engine.onStateChange = updateUI;
 
@@ -451,6 +435,23 @@ function setupEventListeners() {
 
   document.querySelectorAll('.lang-btn').forEach(btn => {
     btn.addEventListener('click', () => setLanguage(btn.dataset.lang));
+  });
+
+  document.querySelectorAll('.part-btn').forEach(btn => {
+    btn.addEventListener('click', async () => {
+      const newPart = btn.dataset.part;
+      if (newPart === partData.config.id) return;
+      const { loadPartData: load } = await import('./data/loader.js');
+      partData = await load(newPart);
+      document.querySelectorAll('.part-btn').forEach(b => {
+        b.classList.toggle('active', b.dataset.part === newPart);
+      });
+      // Update URL
+      const url = new URL(window.location);
+      url.searchParams.set('part', newPart);
+      history.replaceState(null, '', url);
+      updateIntro();
+    });
   });
 
   restartBtn.addEventListener('click', () => {

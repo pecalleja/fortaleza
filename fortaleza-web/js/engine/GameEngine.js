@@ -2,19 +2,14 @@ import { GameObject } from './GameObject.js';
 import { Room } from './Room.js';
 import { Player } from './Player.js';
 import { Linking, OpenLink, DangerLink, DangerLink2, RiddleLink } from './Linking.js';
-import { Troll, Guard, Hidden } from './NPC.js';
+import { Troll, Guard, Daughter, Hidden } from './NPC.js';
 import { CommandParser } from './CommandParser.js';
-import { rooms as roomsData } from '../data/rooms.js';
-import { items as itemsData } from '../data/items.js';
-import { npcs as npcsData } from '../data/npcs.js';
-import { links as linksData, hiddenObjects as hiddenData } from '../data/links.js';
 import * as i18n from '../i18n/i18n.js';
 
-const TOTAL_ROOMS = 50;
-
 export class GameEngine {
-  constructor() {
-    this.player = new Player();
+  constructor(partData) {
+    this.config = partData.config;
+    this.player = new Player(this.config.maxWeight);
     this.rooms = {};
     this.parser = new CommandParser();
     this.isGameOver = false;
@@ -23,10 +18,13 @@ export class GameEngine {
     this.onOutput = null; // callback: (text, type) => void
     this.onStateChange = null; // callback: () => void
 
-    this.initializeWorld();
+    this.initializeWorld(partData);
   }
 
-  initializeWorld() {
+  initializeWorld(partData) {
+    const { rooms: roomsData, items: itemsData, npcs: npcsData,
+            links: linksData, hiddenObjects: hiddenData } = partData;
+
     // Create rooms
     for (const data of roomsData) {
       this.rooms[data.roomId] = new Room(data);
@@ -45,6 +43,8 @@ export class GameEngine {
       let npc;
       if (data.type === 'troll') {
         npc = new Troll(data);
+      } else if (data.type === 'daughter') {
+        npc = new Daughter(data);
       } else if (data.type === 'guard') {
         npc = new Guard(data);
       }
@@ -64,7 +64,7 @@ export class GameEngine {
     }
 
     // Create and place hidden objects
-    for (const data of hiddenData) {
+    for (const data of (hiddenData || [])) {
       const hidden = this.createHidden(data);
       if (hidden) {
         const room = this.rooms[data.roomId];
@@ -72,8 +72,8 @@ export class GameEngine {
       }
     }
 
-    // Place player in room 1
-    this.player.go(this.rooms[1]);
+    // Place player in start room
+    this.player.go(this.rooms[this.config.startRoom]);
   }
 
   createLink(data) {
@@ -102,6 +102,8 @@ export class GameEngine {
         hidden.revealedThing = this.createLink(rd);
       } else if (rd.type === 'troll') {
         hidden.revealedThing = new Troll(rd);
+      } else if (rd.type === 'daughter') {
+        hidden.revealedThing = new Daughter(rd);
       } else if (rd.type === 'hidden') {
         hidden.revealedThing = this.createHidden(rd);
       } else {
@@ -147,6 +149,9 @@ export class GameEngine {
       case 'quit': this.handleQuit(); break;
       default: this.output(i18n.t('dontUnderstand'));
     }
+
+    // Check turn effects (e.g. item-in-room kills player)
+    this.checkTurnEffects();
 
     // Check win/lose
     if (this.player.isDead && !this.isGameOver) {
@@ -276,7 +281,7 @@ export class GameEngine {
       return;
     }
 
-    if (obj.weight > 40) {
+    if (obj.weight > this.config.maxWeight) {
       this.output(i18n.t('cantCarry'));
       return;
     }
@@ -417,6 +422,12 @@ export class GameEngine {
       if (result.success) {
         this.output(i18n.t('npcDeath'), 'combat');
         this.output(target.confession(lang), 'combat');
+        // If killing this NPC drops an item (e.g. Daughter), place it in the room
+        if (result.droppedItem) {
+          const droppedObj = new GameObject(result.droppedItem);
+          this.player.currentRoom.add(droppedObj);
+          this.output(i18n.t('discovered'), 'effect');
+        }
       } else {
         this.output(i18n.t('guardLaugh'), 'combat');
       }
@@ -597,7 +608,7 @@ export class GameEngine {
   }
 
   handlePercent() {
-    const pct = Math.round((this.player.visits / TOTAL_ROOMS) * 100);
+    const pct = Math.round((this.player.visits / this.config.totalRooms) * 100);
     this.output(i18n.format('progress', pct));
   }
 
@@ -619,7 +630,7 @@ export class GameEngine {
   handleSave() {
     try {
       const state = this.serializeState();
-      localStorage.setItem('fortaleza_save', JSON.stringify(state));
+      localStorage.setItem(`fortaleza_save_${this.config.id}`, JSON.stringify(state));
       this.output(i18n.t('gameSaved'));
     } catch (e) {
       this.output('Error: ' + e.message);
@@ -628,7 +639,7 @@ export class GameEngine {
 
   handleLoad() {
     try {
-      const data = localStorage.getItem('fortaleza_save');
+      const data = localStorage.getItem(`fortaleza_save_${this.config.id}`);
       if (!data) {
         this.output(i18n.t('noSaveFound'));
         return;
@@ -642,27 +653,40 @@ export class GameEngine {
     }
   }
 
+  // --- Turn Effects ---
+
+  checkTurnEffects() {
+    const effects = this.config.turnEffects;
+    if (!effects) return;
+    for (const eff of effects) {
+      if (eff.type === 'itemPresenceKills') {
+        const room = this.rooms[eff.roomId];
+        if (room && this.player.currentRoom === room && room.findObject(eff.itemName)) {
+          this.player.die();
+          this.output(eff.messageEs && eff.messageEn
+            ? (i18n.getLang() === 'en' ? eff.messageEn : eff.messageEs)
+            : i18n.t('youDied'), 'death');
+        }
+      }
+    }
+  }
+
   // --- Victory Check ---
 
   checkVictory() {
-    // From FORT1.PAS Goal function:
-    // Room 21: no "Centro del cerebro"
-    // Room 20: no "Centro del corazon"
-    // Room 19: no "Centro del estomago"
-    // Room 18: no "Centro de los pulmones"
-    // Room 11: no "Troll"
-    const checkGone = (roomId, name) => {
-      const room = this.rooms[roomId];
-      if (!room) return false;
-      const obj = room.findObject(name);
-      return !obj || obj.isDead;
-    };
-
-    return checkGone(22, 'Centro del cerebro') &&
-           checkGone(21, 'Centro del corazon') &&
-           checkGone(20, 'Centro del estomago') &&
-           checkGone(19, 'Centro de los pulmones') &&
-           checkGone(12, 'Troll');
+    return this.config.victoryConditions.every(cond => {
+      if (cond.type === 'gone') {
+        const room = this.rooms[cond.roomId];
+        if (!room) return false;
+        const obj = room.findObject(cond.name);
+        return !obj || obj.isDead;
+      }
+      if (cond.type === 'itemInRoom') {
+        const room = this.rooms[cond.roomId];
+        return room?.findObject(cond.itemName) != null;
+      }
+      return false;
+    });
   }
 
   // --- Serialization ---
@@ -712,6 +736,7 @@ export class GameEngine {
 
     return {
       version: 1,
+      partId: this.config.id,
       timestamp: Date.now(),
       playerRoomId: this.player.currentRoom.roomId,
       playerVisits: this.player.visits,
@@ -796,7 +821,7 @@ export class GameEngine {
     const room = this.player.currentRoom;
     return {
       doors: room.getLinks().filter(l => !l.isDead),
-      items: room.getItems().filter(i => i.weight <= 40),
+      items: room.getItems().filter(i => i.weight <= this.config.maxWeight),
       npcs: room.getNPCs(),
       hiddens: room.getHiddenObjects(),
     };
@@ -809,12 +834,12 @@ export class GameEngine {
     return false;
   }
 
-  restart() {
-    this.player = new Player();
+  restart(partData) {
+    this.player = new Player(this.config.maxWeight);
     this.rooms = {};
     this.isGameOver = false;
     this.isVictory = false;
     this.commandHistory = [];
-    this.initializeWorld();
+    this.initializeWorld(partData);
   }
 }

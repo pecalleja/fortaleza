@@ -68,6 +68,21 @@ export class Guard extends GameObject {
   }
 }
 
+export class Daughter extends Guard {
+  constructor(data) {
+    super(data);
+    this.dropsOnDeath = data.dropsOnDeath;
+  }
+
+  die(weaponName) {
+    const result = super.die(weaponName);
+    if (result.success && this.dropsOnDeath) {
+      result.droppedItem = this.dropsOnDeath;
+    }
+    return result;
+  }
+}
+
 export class Hidden extends GameObject {
   constructor(data) {
     super({ ...data, weight: 999 });
