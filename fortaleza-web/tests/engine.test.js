@@ -1,14 +1,17 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { GameEngine } from '../js/engine/GameEngine.js';
+import { loadPartData } from '../js/data/loader.js';
 import * as i18n from '../js/i18n/i18n.js';
 
 describe('GameEngine', () => {
   let engine;
   let output;
+  let partData;
 
-  beforeEach(() => {
+  beforeEach(async () => {
+    partData = await loadPartData('part1');
     i18n.setLang('es');
-    engine = new GameEngine();
+    engine = new GameEngine(partData);
     output = [];
     engine.onOutput = (text, type) => output.push({ text, type });
   });
@@ -381,7 +384,7 @@ describe('GameEngine', () => {
 
     it('restart resets the game', () => {
       engine.executeCommand('tomar pastel de cerezas');
-      engine.restart();
+      engine.restart(partData);
       expect(engine.player.inventory.length).toBe(0);
       expect(engine.player.currentRoom.roomId).toBe(1);
       expect(engine.isGameOver).toBe(false);
@@ -408,7 +411,7 @@ describe('GameEngine', () => {
       expect(state.playerRoomId).toBe(4);
 
       // Restart and restore
-      engine.restart();
+      engine.restart(partData);
       expect(engine.player.currentRoom.roomId).toBe(1);
       expect(engine.player.inventory.length).toBe(0);
 
