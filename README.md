@@ -10,15 +10,17 @@ You can read more about them here:
 
 ## Play Online (Web Version)
 
-A modern web browser rebuild of La Fortaleza is available at:
+A modern web browser rebuild of La Fortaleza (both Part I and Part II) is available at:
 
 **https://pecalleja.github.io/fortaleza/**
 
 Features:
+  - Both Part I (50 rooms) and Part II (55 rooms) playable
   - Retro terminal aesthetic (green text on dark background)
   - Bilingual: play in Spanish or English (toggle in the header)
   - Hybrid input: type commands or click quick-action buttons
   - Save/load game progress in the browser
+  - Interactive map viewer for each part
 
 The web version source code is in the `fortaleza-web/` directory. See
 [fortaleza-web/README.md](fortaleza-web/README.md) for local development
