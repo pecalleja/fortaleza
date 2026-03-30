@@ -48,12 +48,35 @@ export class GameObject {
     );
     if (found) return found;
 
+    // Word subsequence match: all search words appear in order in the name.
+    // Handles cases where noise words (la, los, las...) were stripped from input
+    // but remain in the object name, e.g. "ruta de camellos" matches "Ruta de los camellos".
+    const searchWords = normalized.split(/\s+/);
+    if (searchWords.length > 1) {
+      found = this.children.find(c =>
+        GameObject.wordsSubsequence(searchWords, GameObject.normalize(c.nameEs)) ||
+        GameObject.wordsSubsequence(searchWords, GameObject.normalize(c.nameEn))
+      );
+      if (found) return found;
+    }
+
     // Reverse partial (search term contains object name)
     found = this.children.find(c =>
       normalized.includes(GameObject.normalize(c.nameEs)) ||
       normalized.includes(GameObject.normalize(c.nameEn))
     );
     return found || null;
+  }
+
+  static wordsSubsequence(searchWords, nameFull) {
+    const nameWords = nameFull.split(/\s+/);
+    let ni = 0;
+    for (const sw of searchWords) {
+      while (ni < nameWords.length && nameWords[ni] !== sw) ni++;
+      if (ni >= nameWords.length) return false;
+      ni++;
+    }
+    return true;
   }
 
   static normalize(str) {

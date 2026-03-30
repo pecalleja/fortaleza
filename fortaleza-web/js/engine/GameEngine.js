@@ -679,7 +679,7 @@ export class GameEngine {
         const room = this.rooms[cond.roomId];
         if (!room) return false;
         const obj = room.findObject(cond.name);
-        return !obj || obj.isDead;
+        return !obj || obj.isDead || obj.isHappy;
       }
       if (cond.type === 'itemInRoom') {
         const room = this.rooms[cond.roomId];
